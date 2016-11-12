@@ -19,7 +19,7 @@ create table Plane(
 	owner_id varchar(5),
 	constraint plane_pk primary key (plane_type)
 		deferrable,
-	constraint plane_owner_fk foreign key (owner_id) references Airline.airline_id
+	constraint plane_owner_fk foreign key (owner_id) references Airline(airline_id)
 		deferrable,
 	constraint plane_capacity_limit check (plane_capacity > 0)
 );
@@ -36,9 +36,9 @@ create table Flight(
 	weekly_schedule varchar(7),
 	constraint flight_pk primary key (flight_number)
 		deferrable,
-	constraint flight_plane_type_fk foreign key (plane_type) references Plane.plane_type
+	constraint flight_plane_type_fk foreign key (plane_type) references Plane(plane_type)
 		deferrable,
-	constraint flight_airline_fk foreign key (airline_id) references Airline.airline_id
+	constraint flight_airline_fk foreign key (airline_id) references Airline(airline_id)
 		deferrable,
 	constraint flight_departure_city_check check (length(departure_city) = 3),
 	constraint flight_arrival_city_check check (length(arrival_city) = 3)
@@ -53,7 +53,7 @@ create table Price(
 	low_price int,
 	constraint price_pk primary key (departure_city, arrival_city)
 		deferrable,
-	constraint price_airline_fk foreign key (airline_id) references Airline.airline_id
+	constraint price_airline_fk foreign key (airline_id) references Airline(airline_id)
 		deferrable,
 	constraint price_high_price_limit check (high_price >= 0),
 	constraint price_low_price_limit check (low_price >= 0),
@@ -77,8 +77,8 @@ create table customer(
 	frequent_miles varchar(5),
 	constraint customer_pk primary key (cid)
 		deferrable,
-	constraint customer_salutations check salutation in ('Mr','Mrs','Ms'),
-	constraint customer_frequent_miles_fk foreign key (frequent_miles) references Airline.airline_id
+	constraint customer_salutations check (salutation in ('Mr','Mrs','Ms')),
+	constraint customer_frequent_miles_fk foreign key (frequent_miles) references Airline(airline_id)
 );
 
 drop table Reservation cascade constraints;
@@ -91,7 +91,7 @@ create table Reservation(
 	ticketed varchar(1),
 	constraint reservation_pk primary key (reservation_number)
 		deferrable,
-	constraint reservation_cid_fk foreign key (cid) references Customer.cid
+	constraint reservation_cid_fk foreign key (cid) references Customer(cid)
 		deferrable,
 	constraint reservation_price_limit check (cost >= 0),
 	constraint reservation_ticketed_set check (ticketed in ('Y','N'))
@@ -103,21 +103,120 @@ create table Reservation_detail(
 	flight_number varchar(3),
 	flight_date date,
 	leg int not null,
-	constraint reservation_pk primary key (reservation_number, leg)
+	constraint res_det_pk primary key (reservation_number, leg)
 		deferrable,
-	constraint reservation_number_fk foreign key (reservation_number) references Reservation.reservation_number
+	constraint res_det_number_fk foreign key (reservation_number) references Reservation(reservation_number)
 		deferrable,
-	constraint reservation_flightnum_fk foreign key (flight_number) references Flight.flight_number
+	constraint res_det_flightnum_fk foreign key (flight_number) references Flight(flight_number)
 		deferrable,
-	constraint reservation_leg_limit check (leg >=0)
+	constraint res_det_leg_limit check (leg >= 1)
 );
 
-drop table SysDate cascade constraints;
-create table SysDate(
+drop table SystemDate cascade constraints;
+create table SystemDate(
 	c_date date not null,
-	constraint date_pk primary key (date)
+	constraint date_pk primary key (c_date)
 		deferrable
 );
+
+--assumption for this trigger: c_date is incremented every second, and this trigger will run each time and check
+--for reservation_detail entries that are exactly 12 hours away
+CREATE OR REPLACE TRIGGER cancelReservation
+after update of c_date
+on SystemDate
+for each row
+DECLARE
+	cursor c_to_cancel is 
+		select reservation_number, flight_number, flight_date
+		from reservation NATURAL JOIN reservation_detail
+		where ticketed = 'N' and
+			leg = 1 and --first leg of trip should always occur first, so use as starting time of reservation
+			(flight_date - :new.c_date) = 0.5; --date minus a date yields an amount of days and 12h = 0.5 day
+			
+	cur_reservation reservation.reservation_number%type;
+	cur_flightDate reservation_detail.flight_date%type;
+	cur_flightNum reservation_detail.flight_number%type;
+	cur_AirlineId airline.airline_id%type;
+	new_plane plane.plane_type%type;
+	numPassengers int;
+BEGIN
+	IF NOT c_to_cancel%ISOPEN THEN
+		open c_to_cancel;
+	END IF;
+	LOOP
+		--cancel the current reservation if it's not ticketed
+		FETCH c_to_cancel INTO cur_reservation, cur_flightNum, cur_flightDate;
+		EXIT WHEN c_to_cancel%NOTFOUND;
+		delete from reservation_detail
+			where reservation_number = cur_reservation;
+		delete from reservation
+			where reservation_number = cur_reservation;
+		--get the new number of passengers on that flight
+		--ASSUMPTION: all legs with the same flight_Number and same flight_date are the same flight
+		SELECT count(*) into numPassengers
+			FROM reservation_detail
+			WHERE flight_number = cur_flightNum AND flight_date = cur_flightDate;
+		--find the smallest plane from the same airline that can hold that number of passengers
+		--Figure out the current airline
+		SELECT airline_id into cur_AirlineId
+			FROM Flight
+			WHERE flight_number = cur_flightNum;
+		--Retrieve all planes owned by that airline that can hold the current number of passengers, and retrieve the type of the smallest one (order asc by capacity and select rownum = 1)
+		--Note that we are only deleting reservations, so we shouldn't end up with a situation where numPassengers exceeds the capacity of any available plane
+		SELECT plane_type into new_plane
+		FROM Plane
+		WHERE owner_id = cur_AirlineId AND plane_capacity >= numPassengers and rownum = 1
+		ORDER BY plane_capacity asc;
+		--Update the Flight with the (potentially) new plane
+		UPDATE Flight SET plane_type = new_plane WHERE flight_number = cur_flightNum;
+	END LOOP;
+	close c_to_cancel;
+END;
+/
+
+--This trigger selects the smallest plane that will hold all passengers whenever a reservation_detail entry is inserted or deleted
+CREATE OR REPLACE TRIGGER planeUpgrade
+after insert or delete
+on reservation_detail
+for each row
+DECLARE
+	airlineId Airline.airline_id%type;
+	new_plane plane.plane_type%type;
+	numPassengers int;
+	resDetData reservation_detail%rowtype;
+	flightNum reservation_detail.flight_number%type;
+	flightDate reservation_detail.flight_date%type;
+BEGIN
+	--set up variables so trigger works with both insertion and delete
+	IF INSERTING THEN
+		flightNum := :new.flight_number;
+		flightDate := :new.flight_date;
+	ELSE --DELETING
+		flightNum := :old.flight_number;
+		flightDate := :old.flight_date;
+	END IF;
+	--Get the airline for the new reservation
+	SELECT airline_id into airlineId
+			FROM Flight F
+			WHERE F.flight_number = flightNum;
+	--get the new number of passengers on that flight
+	--ASSUMPTION: all legs with the same flight_Number and same flight_date are the same flight
+	SELECT count(*) into numPassengers
+		FROM reservation_detail R
+		WHERE R.flight_number = :new.flight_number AND R.flight_date = flightDate;
+	--Retrieve all planes owned by that airline that can hold the current number of passengers, and retrieve the type of the smallest one (order asc by capacity and select rownum = 1)
+	SELECT plane_type into new_plane
+		FROM Plane
+		WHERE owner_id = airlineId AND plane_capacity >= numPassengers and rownum = 1
+		ORDER BY plane_capacity asc;
+	--Update the Flight with the (potentially) new plane
+	UPDATE Flight SET plane_type = new_plane WHERE flight_number = flightNum;
+EXCEPTION
+	WHEN NO_DATA_FOUND THEN
+		--failed to find a big enough plane - cancel the new reservation
+		DELETE FROM reservation_detail WHERE leg = :new.leg AND reservation_number = :new.reservation_number;
+END;
+/
 
 create or replace trigger adjustTicket
 	after update of low_price or high_price
