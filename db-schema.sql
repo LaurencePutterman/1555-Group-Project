@@ -127,48 +127,27 @@ on SystemDate
 for each row
 DECLARE
 	cursor c_to_cancel is 
-		select reservation_number, flight_number, flight_date
+		select reservation_number
 		from reservation NATURAL JOIN reservation_detail
 		where ticketed = 'N' and
 			leg = 1 and --first leg of trip should always occur first, so use as starting time of reservation
 			(flight_date - :new.c_date) = 0.5; --date minus a date yields an amount of days and 12h = 0.5 day
 			
 	cur_reservation reservation.reservation_number%type;
-	cur_flightDate reservation_detail.flight_date%type;
-	cur_flightNum reservation_detail.flight_number%type;
-	cur_AirlineId airline.airline_id%type;
-	new_plane plane.plane_type%type;
-	numPassengers int;
 BEGIN
 	IF NOT c_to_cancel%ISOPEN THEN
 		open c_to_cancel;
 	END IF;
 	LOOP
 		--cancel the current reservation if it's not ticketed
-		FETCH c_to_cancel INTO cur_reservation, cur_flightNum, cur_flightDate;
+		FETCH c_to_cancel INTO cur_reservation;
 		EXIT WHEN c_to_cancel%NOTFOUND;
+		--have to delete from reservation_detail first because of integrity constraints
 		delete from reservation_detail
 			where reservation_number = cur_reservation;
 		delete from reservation
 			where reservation_number = cur_reservation;
-		--get the new number of passengers on that flight
-		--ASSUMPTION: all legs with the same flight_Number and same flight_date are the same flight
-		SELECT count(*) into numPassengers
-			FROM reservation_detail
-			WHERE flight_number = cur_flightNum AND flight_date = cur_flightDate;
-		--find the smallest plane from the same airline that can hold that number of passengers
-		--Figure out the current airline
-		SELECT airline_id into cur_AirlineId
-			FROM Flight
-			WHERE flight_number = cur_flightNum;
-		--Retrieve all planes owned by that airline that can hold the current number of passengers, and retrieve the type of the smallest one (order asc by capacity and select rownum = 1)
-		--Note that we are only deleting reservations, so we shouldn't end up with a situation where numPassengers exceeds the capacity of any available plane
-		SELECT plane_type into new_plane
-		FROM Plane
-		WHERE owner_id = cur_AirlineId AND plane_capacity >= numPassengers and rownum = 1
-		ORDER BY plane_capacity asc;
-		--Update the Flight with the (potentially) new plane
-		UPDATE Flight SET plane_type = new_plane WHERE flight_number = cur_flightNum;
+		--IMPORTANT NOTE: changing the plane size is handled by the planeUpgrade trigger, which triggers on each deletion from reservation_detail!
 	END LOOP;
 	close c_to_cancel;
 END;
@@ -214,6 +193,7 @@ BEGIN
 EXCEPTION
 	WHEN NO_DATA_FOUND THEN
 		--failed to find a big enough plane - cancel the new reservation
+		--should only arrive here during insertions
 		DELETE FROM reservation_detail WHERE leg = :new.leg AND reservation_number = :new.reservation_number;
 END;
 /
