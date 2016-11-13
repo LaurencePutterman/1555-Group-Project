@@ -1,8 +1,8 @@
 drop table Airline cascade constraints;
 create table Airline(
-	airline_id varchar(5) not null,
-	airline_name varchar(50),
-	airline_abbreviation varchar(10) not null,
+	airline_id varchar2(5) not null,
+	airline_name varchar2(50),
+	airline_abbreviation varchar2(10) not null,
 	year_founded int,
 	constraint airline_pk primary key (airline_id)
 		deferrable,
@@ -12,11 +12,11 @@ create table Airline(
 drop table Plane cascade constraints;
 create table Plane(
 	plane_type char(4) not null,
-	manufacture varchar(10),
+	manufacture varchar2(10),
 	plane_capacity int,
 	last_service date,
 	year int,
-	owner_id varchar(5),
+	owner_id varchar2(5),
 	constraint plane_pk primary key (plane_type)
 		deferrable,
 	constraint plane_owner_fk foreign key (owner_id) references Airline(airline_id)
@@ -26,14 +26,14 @@ create table Plane(
 
 drop table Flight cascade constraints;
 create table Flight(
-	flight_number varchar(3) not null,
-	airline_id varchar(5),
+	flight_number varchar2(3) not null,
+	airline_id varchar2(5),
 	plane_type char(4),
-	departure_city varchar(3),
-	arrival_city varchar(3),
-	departure_time varchar(4),
-	arrival_time varchar(4),
-	weekly_schedule varchar(7),
+	departure_city varchar2(3),
+	arrival_city varchar2(3),
+	departure_time varchar2(4),
+	arrival_time varchar2(4),
+	weekly_schedule varchar2(7),
 	constraint flight_pk primary key (flight_number)
 		deferrable,
 	constraint flight_plane_type_fk foreign key (plane_type) references Plane(plane_type)
@@ -46,9 +46,9 @@ create table Flight(
 
 drop table price cascade constraints;
 create table Price(
-	departure_city varchar(3) not null,
-	arrival_city varchar(3) not null,
-	airline_id varchar(5),
+	departure_city varchar2(3) not null,
+	arrival_city varchar2(3) not null,
+	airline_id varchar2(5),
 	high_price int,
 	low_price int,
 	constraint price_pk primary key (departure_city, arrival_city)
@@ -63,18 +63,18 @@ create table Price(
 
 drop table customer cascade constraints;
 create table customer(
-	cid varchar(9) not null,
-	salutation varchar(3),
-	first_name varchar(30),
-	last_name varchar(30),
-	credit_car_num varchar(16),
+	cid varchar2(9) not null,
+	salutation varchar2(3),
+	first_name varchar2(30),
+	last_name varchar2(30),
+	credit_car_num varchar2(16),
 	credit_card_expire date,
-	street varchar(30),
-	city varchar(30),
-	state varchar(2),
-	phone varchar(10),
-	email varchar(30),
-	frequent_miles varchar(5),
+	street varchar2(30),
+	city varchar2(30),
+	state varchar2(2),
+	phone varchar2(10),
+	email varchar2(30),
+	frequent_miles varchar2(5),
 	constraint customer_pk primary key (cid)
 		deferrable,
 	constraint customer_salutations check (salutation in ('Mr','Mrs','Ms')),
@@ -83,12 +83,12 @@ create table customer(
 
 drop table Reservation cascade constraints;
 create table Reservation(
-	reservation_number varchar(5) not null,
-	cid varchar(9),
+	reservation_number varchar2(5) not null,
+	cid varchar2(9),
 	cost int,
-	credit_car_num varchar(16),
+	credit_car_num varchar2(16),
 	reservation_date date,
-	ticketed varchar(1),
+	ticketed varchar2(1),
 	constraint reservation_pk primary key (reservation_number)
 		deferrable,
 	constraint reservation_cid_fk foreign key (cid) references Customer(cid)
@@ -99,8 +99,8 @@ create table Reservation(
 
 drop table Reservation_detail cascade constraints;
 create table Reservation_detail(
-	reservation_number varchar(5) not null,
-	flight_number varchar(3),
+	reservation_number varchar2(5) not null,
+	flight_number varchar2(3),
 	flight_date date,
 	leg int not null,
 	constraint res_det_pk primary key (reservation_number, leg)
@@ -199,13 +199,14 @@ END;
 /
 
 create or replace trigger adjustTicket
-	after update of low_price or high_price
+	after update of low_price, high_price
 	on Price
 	for each row
 	
 	DECLARE
-	flight_temp varchar(3);
-	reservation_temp varchar(5);
+	flight_temp varchar2(3);
+	reservation_temp varchar2(5);
+	leg_temp int;
 	leg_max int;
 	cursor c_flight_low
 		is 
@@ -222,9 +223,9 @@ create or replace trigger adjustTicket
 			and Flight.arrival_city = :new.arrival_city
 			and Flight.arrival_time > Flight.departure_time;
 	
-	cursor c_reservation_num (flight_num in varchar2)
+	cursor c_reservation_num_leg (flight_num in varchar2)
 		is
-			select reservation_number from reservation_detail
+			select reservation_number,leg from reservation_detail
 			where flight_number = flight_num;
 	
 	begin
@@ -232,20 +233,22 @@ create or replace trigger adjustTicket
 		open c_flight_high;	
 		LOOP
 			fetch c_flight_high into flight_temp;
-			open c_reservation_num(flight_temp);
+			open c_reservation_num_leg(flight_temp);
 			LOOP
-				fetch c_reservation_num into reservation_temp;
+				fetch c_reservation_num_leg into reservation_temp, leg_temp;
 				
 				select max(leg) into leg_max
-				from reservation_detail
+				from Reservation_detail
 				where reservation_number = reservation_temp
 				group by reservation_number;
 				
-				update reservation
-				set cost = cost-:old.high_price + :new.high_price
-				where reservation_number = reservation_temp and leg = 0 or leg = leg_max;
+				if leg_temp = 0 or leg_temp = leg_max then
+					update reservation
+					set cost = cost-:old.high_price + :new.high_price
+					where reservation_number = reservation_temp;
+				end if;
 			END LOOP;
-			close c_reservation_num;
+			close c_reservation_num_leg;
 		END LOOP;
 		close c_flight_high;
 	END IF;	
@@ -256,20 +259,22 @@ create or replace trigger adjustTicket
 		open c_flight_low;
 		LOOP
 			fetch c_flight_low into flight_temp;
-			open c_reservation_num(flight_temp);
+			open c_reservation_num_leg(flight_temp);
 			LOOP
-				fetch c_reservation_num into reservation_temp;
+				fetch c_reservation_num_leg into reservation_temp, leg_temp;
 				
 				select max(leg) into leg_max
-				from reservation_detail
+				from Reservation_detail
 				where reservation_number = reservation_temp
 				group by reservation_number;
 				
-				update reservation
-				set cost = cost-:old.low_price + :new.low_price
-				where reservation_number = reservation_temp and leg = 0 or leg = leg_max;
+				if leg_temp = 0 or leg_temp = leg_max then
+					update reservation
+					set cost = cost-:old.high_price + :new.high_price
+					where reservation_number = reservation_temp;
+				end if;
 			END LOOP;
-			close c_reservation_num;
+			close c_reservation_num_leg;
 		END LOOP;
 		close c_flight_low;
 	END IF;
