@@ -155,7 +155,7 @@ END;
 
 --This trigger selects the smallest plane that will hold all passengers whenever a reservation_detail entry is inserted or deleted
 CREATE OR REPLACE TRIGGER planeUpgrade
-after insert or delete
+before insert or delete
 on reservation_detail
 for each row
 DECLARE

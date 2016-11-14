@@ -14,7 +14,10 @@ def randomStringGenerator(length):
 
 def randomDate(startYear = 1900):
 	m = random.randint(1,12)
-	d = random.randint(1,30)
+	if m == 2:
+		d = random.randint(1,28)
+	else:
+		d = random.randint(1,30)
 	y = random.randint(startYear,2016)
 	return str(m).zfill(2)+"-"+str(d).zfill(2)+"-"+str(y)
 
@@ -22,18 +25,19 @@ def dateAfterGivenDate(date):
 	dArr = date.split("-")
 	m = int(dArr[0])
 	d = int(dArr[1])
-	if d < 30:
+	if d < 30 or m == 2 and d < 28:
 		d += 1
 	else:
 		d = 1
-		m += 1
-	if m>12:
-		m = 1
+		if m >= 12:
+			m = 1
+		else:
+			m += 1
 	y = dArr[2]
 	return str(m).zfill(2)+"-"+str(d).zfill(2)+"-"+str(y)
 
 def dateToSql(date):
-	return "to_date('"+date+"', 'DD-MM-YYYY')"
+	return "to_date('"+date+"', 'MM-DD-YYYY')"
 
 def weekly_scheduleGenerator():
 	letters = ["S","M","T","W","T","F","S"]
@@ -56,7 +60,7 @@ def generatePlane(num = 30):
 	global plane_tups
 
 	manufacturers = ["Airbus","Boeing", "Lockheed", "Embraer"]
-	for x in range(num):
+	for x in range(1,num+1):
 		m = random.choice(manufacturers)
 		p_type = "'"+m[0]+str(random.randint(0,999)).zfill(3)+"'"
 		while p_type in plane_tups:
@@ -72,7 +76,7 @@ def generateFlight(num = 100):
 	global flight_tups
 
 	airports = ["ATL","LAX","ORD","DFW","JFK","DEN","SFO","CLT","LAS","PHX","MIA","IAH","SEA","MCO","EWR","MSP","BOS","DTW","PHL","LGA","FLL","BWI","DCA", "PIT"]
-	for x in range(num):
+	for x in range(1,num+1):
 		fn = "'"+str(x)+"'"
 		air_id = random.choice(airline_tups.keys())
 		p_type = random.choice(plane_tups.keys())
@@ -102,18 +106,20 @@ def generateCustomer(num = 200):
 	first_names = ["Aaron","Bill","Bob","Richard","Robert","Laurence","Tim","George","Sam","Emily","Tiffany","Mackenzie","Victoria","Jessie","Jessica","Kylie"]
 	last_names = ["Smith","White","Black","Keeton","Brown","Fox","Swift","Eastwood"]
 
-	for x in range(num):
+	for x in range(1,num+1):
 		cid = "'"+str(x)+"'"
 		salutation = "'"+random.choice(salutations)+"'"
-		first_name = "'"+random.choice(first_names)+"'"
-		last_name = "'"+random.choice(last_names)+"'"
+		first_name = random.choice(first_names)
+		last_name = random.choice(last_names)
+		email = "'"+first_name+last_name+"@gmail.com'"
+		first_name = "'"+first_name+"'"
+		last_name = "'"+last_name+"'"
 		credit_card_num = "'"+str(random.randint(1111111111111111,9999999999999999))+"'"
 		credit_card_expire = dateToSql(randomDate())
 		street = "'"+randomStringGenerator(10)+" Road'"
 		city = "'"+randomStringGenerator(10)+"'"
 		state = "'"+randomStringGenerator(2)+"'"
 		phone = "'"+str(random.randint(1111111111,9999999999))+"'"
-		email = "'"+first_name+last_name+"@gmail.com'"
 		frequent_miles = random.choice(airline_tups.keys())
 
 		customer_tups[cid] = (cid,salutation,first_name,last_name,credit_card_num,credit_card_expire,street,city,state,phone,email,frequent_miles)
@@ -127,7 +133,7 @@ def generateReservations(num = 300):
 	global reservation_details
 
 	ticketed = ["'Y'","'N'"]
-	for x in range(num):
+	for x in range(1,num+1):
 		reservation_number = "'"+str(x)+"'"
 		num_legs = random.randint(1,5)
 		cid = random.choice(customer_tups.keys())
@@ -137,7 +143,7 @@ def generateReservations(num = 300):
 		flight_date = date
 		cost = 0
 		ticketSelection = random.choice(ticketed)
-		for l in range(num_legs):
+		for l in range(1,num_legs+1):
 
 			flight = random.choice(flight_tups.keys())
 			while flight in flights:
@@ -170,13 +176,13 @@ if __name__ == "__main__":
 	generateReservations()
 
 	with open('sample_data.sql', 'a') as the_file:
-	    the_file.write(exportTupsToSql(airline_tups,"Airline")+"\n\n")
-	    the_file.write(exportTupsToSql(plane_tups,"Plane")+"\n\n")
-	    the_file.write(exportTupsToSql(flight_tups,"Flight")+"\n\n")
-	    the_file.write(exportTupsToSql(price,"Price")+"\n\n")
-	    the_file.write(exportTupsToSql(customer_tups,"Customer")+"\n\n")
-	    the_file.write(exportTupsToSql(reservation_tups,"Reservation")+"\n\n")
-	    the_file.write(exportTupsToSql(reservation_details,"Reservation_detail")+"\n\n")
+	    the_file.write(exportTupsToSql(airline_tups,"Airline")+"\ncommit;\n")
+	    the_file.write(exportTupsToSql(plane_tups,"Plane")+"\ncommit;\n")
+	    the_file.write(exportTupsToSql(flight_tups,"Flight")+"\ncommit;\n")
+	    the_file.write(exportTupsToSql(price,"Price")+"\ncommit;\n")
+	    the_file.write(exportTupsToSql(customer_tups,"Customer")+"\ncommit;\n")
+	    the_file.write(exportTupsToSql(reservation_tups,"Reservation")+"\ncommit;\n")
+	    the_file.write(exportTupsToSql(reservation_details,"Reservation_detail")+"\ncommit;\n")
 
 
 
