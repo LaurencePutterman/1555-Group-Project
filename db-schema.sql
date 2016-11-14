@@ -255,7 +255,7 @@ create or replace trigger adjustTicket
 				
 			
 	
-	if :new.low_price != :new.high_price then
+	if :new.low_price != :old.low_price then
 		open c_flight_low;
 		LOOP
 			fetch c_flight_low into flight_temp;
@@ -270,7 +270,7 @@ create or replace trigger adjustTicket
 				
 				if leg_temp = 0 or leg_temp = leg_max then
 					update reservation
-					set cost = cost-:old.high_price + :new.high_price
+					set cost = cost-:old.low_price + :new.low_price
 					where reservation_number = reservation_temp;
 				end if;
 			END LOOP;
