@@ -36,7 +36,7 @@ create table Flight(
 	weekly_schedule varchar2(7),
 	constraint flight_pk primary key (flight_number)
 		deferrable,
-	constraint flight_plane_type_fk foreign key (plane_type) references Plane(plane_type)
+	constraint flight_plane_type_fk foreign key (plane_type,airline_id) references Plane(plane_type,owner_id)
 		deferrable,
 	constraint flight_airline_fk foreign key (airline_id) references Airline(airline_id)
 		deferrable,

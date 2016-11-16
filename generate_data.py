@@ -65,7 +65,7 @@ def generateAirline(num = 10):
 			temp = random.choice(airline_words)
 			airline_name_arr.append(temp)
 			airline_abbreviation += temp[0]
-		airline_tups[x] = (x,"'"+" ".join(airline_name_arr)+"'","'"+airline_abbreviation+"'",random.randint(1900, 2016))
+		airline_tups[x] = (str(x),"'"+" ".join(airline_name_arr)+"'","'"+airline_abbreviation+"'",random.randint(1900, 2016))
 	return airline_tups
 
 def generatePlane(num = 30):
@@ -256,7 +256,7 @@ def generateReservations(num = 300):
 		cid = random.choice(customer_tups.keys())
 		credit_card = customer_tups[cid][4]
 		flights = []
-		date = randomDate()
+		resdate = randomDate()
 		cost = 0
 		ticketSelection = random.choice(ticketed)
 		oneWayOrRoundTripSelect = random.randint(1,100)
@@ -274,7 +274,7 @@ def generateReservations(num = 300):
 		else:
 			cost += price_info[4]
 		if legs == 1:
-			flight_date = dateAfterGivenDate(date)
+			flight_date = dateAfterGivenDate(resdate)
 			d = datetime(1900,1,1)
 			try:
 				d = datetime.strptime(flight_date, '%m-%d-%Y').date()
@@ -304,7 +304,7 @@ def generateReservations(num = 300):
 				if price2[0] == flight_tups[connect2][3] and price2[1] == flight_tups[connect2][4]:
 					break
 
-			flight_date1 = dateAfterGivenDate(date)
+			flight_date1 = dateAfterGivenDate(resdate)
 			d = datetime.strptime(flight_date1, '%m-%d-%Y').date()
 			
 			while flight_tups[connect1][7][d.weekday()] == "-":
@@ -367,7 +367,7 @@ def generateReservations(num = 300):
 					if price2[0] == flight_tups[connect2][3] and price2[1] == flight_tups[connect2][4]:
 						break
 
-				flight_date1 = dateAfterGivenDate(date)
+				flight_date1 = dateAfterGivenDate(flight_date)
 				d = datetime.strptime(flight_date1, '%m-%d-%Y').date()
 				
 				while flight_tups[connect1][7][d.weekday()] == "-":
@@ -387,7 +387,7 @@ def generateReservations(num = 300):
 				reservation_details[(reservation_number,l)] = (reservation_number,connect2,dateToSql(flight_date2),l)
 
 
-		reservation_tups[reservation_number] = (reservation_number,cid,cost,credit_card,dateToSql(date),ticketSelection)
+		reservation_tups[reservation_number] = (reservation_number,cid,cost,credit_card,dateToSql(resdate),ticketSelection,start_city,end_city)
 
 def exportTupsToSql(d,tableName):
 	returnString = ""
