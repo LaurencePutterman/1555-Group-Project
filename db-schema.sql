@@ -17,7 +17,7 @@ create table Plane(
 	last_service date,
 	year int,
 	owner_id varchar2(5),
-	constraint plane_pk primary key (plane_type)
+	constraint plane_pk primary key (plane_type,owner_id)
 		deferrable,
 	constraint plane_owner_fk foreign key (owner_id) references Airline(airline_id)
 		deferrable,
@@ -89,6 +89,8 @@ create table Reservation(
 	credit_car_num varchar2(16),
 	reservation_date date,
 	ticketed varchar2(1),
+	start_city varchar2(3),
+	end_city varchar2(3),
 	constraint reservation_pk primary key (reservation_number)
 		deferrable,
 	constraint reservation_cid_fk foreign key (cid) references Customer(cid)
