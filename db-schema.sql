@@ -283,7 +283,109 @@ create or replace trigger adjustTicket
 	END;
 	/
 				
+--Trigger to set price of a trip given legs (otherwise there is nothing preventing the cost in Reservation from not matching the cost of the flights corresponding to the reservation's legs)
+CREATE OR REPLACE TRIGGER setPrice
+before insert
+on Reservation_detail
+for each row
+DECLARE
+	frequentAirline Customer.frequent_miles%type;
+	startCity Reservation.start_city%type;
+	endCity Reservation.end_city%type;
+	currentFlightNumber Reservation_detail.flight_number%type;
+	currentFlight Flight%rowtype;
+	totalPrice int := 0;
+	currentPrice int := 0;
+	isOvernight boolean := false;
+	endLoop boolean := false;
+	cursor trip is
+		SELECT flight_number
+		FROM Reservation_detail
+		WHERE Reservation_number = :new.Reservation_number
+		ORDER BY leg asc;
+BEGIN
+	--get the frequent airline for the customer (to determine if discount should be applied)
+	SELECT frequent_miles INTO frequentAirline
+		FROM Customer C JOIN Reservation R ON C.CID = R.CID
+		WHERE Reservation_number = :new.Reservation_number;
+	--get the start city and end city for the trip
+	SELECT start_city, end_city INTO startCity, endCity
+		FROM Reservation
+		WHERE reservation_number = :new.reservation_number;
 		
+	IF NOT trip%ISOPEN THEN
+		open trip;
+	END IF;
+	LOOP
+		FETCH trip INTO currentFlightNumber;
+		--handle the fact that this is a before trigger (after trigger gave me mutating table errors), reservation_detail entry being inserted is not in cursor yet
+		IF trip%NOTFOUND AND endLoop = false THEN
+			currentFlightNumber := :new.flight_number;
+			endLoop := true;
+		ELSIF trip%NOTFOUND AND endLoop = true THEN
+			EXIT;
+		END IF;
+		--get the flight for the current leg
+		SELECT * INTO currentFlight
+			FROM Flight
+			WHERE flight_number = currentFlightNumber;
+		--if the flight is overnight, the military time for the departure will be greater than that of the arrival, assuming no flight exceeds 24h in length (which seems safe)
+		--also note that this comparison works even though they're strings, because the 1 comes before 2, 2 before 3, etc. in "alphabetical" order
+		--also assumption: you receive the low_price if any of the legs crosses a day boundary
+		IF currentFlight.departure_time > currentFlight.arrival_time THEN
+			isOvernight := true;
+		END IF;
+		IF currentFlight.arrival_city = endCity THEN
+			--we've arrived at the destination, time to calculate the price for this direction
+			IF isOvernight = true THEN
+				--use low price
+				SELECT low_price into currentPrice
+					FROM Price
+					WHERE departure_city = startCity AND arrival_city = endCity AND airline_id = currentFlight.airline_id;
+			ELSE
+				--not overnight - use high price
+				SELECT high_price into currentPrice
+					FROM Price
+					WHERE departure_city = startCity AND arrival_city = endCity AND airline_id = currentFlight.airline_id;
+			END IF;
+			IF currentFlight.airline_id = frequentAirline THEN
+				--the customer is flying on their frequent airline and receives a 10% discount
+				currentPrice := currentPrice * 0.9;
+			END IF;
+			--add currentPrice to the total
+			totalPrice := currentPrice + totalPrice;
+			--reset isOvernight in case this is a round trip
+			isOvernight := false;
+		END IF;
+		IF currentFlight.arrival_City = startCity THEN
+			--we've arrived home from a round trip
+			IF isOvernight = true THEN
+				--use low price
+				SELECT low_price into currentPrice
+					FROM Price
+					WHERE departure_city = endCity AND arrival_city = startCity AND airline_id = currentFlight.airline_id;
+			ELSE
+				--not overnight
+					SELECT high_price into currentPrice
+						FROM Price
+						WHERE departure_city = endCity AND arrival_city = startCity AND airline_id = currentFlight.airline_id;
+			END IF;
+			IF currentFlight.airline_id = frequentAirline THEN
+				--customer is flying their frequent airline
+				currentPrice := currentPrice * 0.9;
+			END IF;
+			--add the price for the return trip to the total
+			totalPrice := currentPrice + totalPrice;			
+		END IF;
+	END LOOP;
+	close trip;
+
+	--done calculating price - set price for the current reservation
+	UPDATE Reservation
+		SET cost = totalPrice
+		WHERE reservation_number = :new.reservation_number;
+END;
+/
 		
 	
 	
