@@ -200,85 +200,114 @@ EXCEPTION
 END;
 /
 
+set serveroutput on format wrapped;
 create or replace trigger adjustTicket
 	after update of low_price, high_price
 	on Price
 	for each row
 	
 	DECLARE
-	flight_temp varchar2(3);
+
 	reservation_temp varchar2(5);
-	leg_temp int;
+	date1 date;
+	date2 date;
 	leg_max int;
-	cursor c_flight_low
+	rn number;
+
+	--Cursor to find non-ticketed flights affected by the price change
+	cursor reservations_with_dest
 		is 
-			select flight_number from Flight
-			where Flight.airline_id = :new.airline_id
-			and Flight.departure_city = :new.departure_city
-			and Flight.arrival_city = :new.arrival_city
-			and Flight.arrival_time < Flight.departure_time;
-	cursor c_flight_high
-		is 
-			select flight_number from Flight
-			where Flight.airline_id = :new.airline_id
-			and Flight.departure_city = :new.departure_city
-			and Flight.arrival_city = :new.arrival_city
-			and Flight.arrival_time > Flight.departure_time;
-	
-	cursor c_reservation_num_leg (flight_num in varchar2)
-		is
-			select reservation_number,leg from reservation_detail
-			where flight_number = flight_num;
-	
-	begin
-	if :new.high_price != :old.high_price then
-		open c_flight_high;	
+			select distinct Reservation.reservation_number  from Reservation
+			where Reservation.start_city = :new.departure_city
+			and Reservation.end_city = :new.arrival_city
+			and Reservation.ticketed = 'N';
+
+	BEGIN
+	if UPDATING('low_price') then
+		open reservations_with_dest;
 		LOOP
-			fetch c_flight_high into flight_temp;
-			open c_reservation_num_leg(flight_temp);
-			LOOP
-				fetch c_reservation_num_leg into reservation_temp, leg_temp;
-				
-				select max(leg) into leg_max
-				from Reservation_detail
-				where reservation_number = reservation_temp
-				group by reservation_number;
-				
-				if leg_temp = 0 or leg_temp = leg_max then
-					update reservation
-					set cost = cost-:old.high_price + :new.high_price
-					where reservation_number = reservation_temp;
-				end if;
-			END LOOP;
-			close c_reservation_num_leg;
-		END LOOP;
-		close c_flight_high;
-	END IF;	
-				
-			
-	
-	if :new.low_price != :old.low_price then
-		open c_flight_low;
-		LOOP
-			fetch c_flight_low into flight_temp;
-			open c_reservation_num_leg(flight_temp);
-			LOOP
-				fetch c_reservation_num_leg into reservation_temp, leg_temp;
-				
-				select max(leg) into leg_max
-				from Reservation_detail
-				where reservation_number = reservation_temp
-				group by reservation_number;
-				
-				if leg_temp = 0 or leg_temp = leg_max then
+			fetch reservations_with_dest into reservation_temp;
+			EXIT WHEN reservations_with_dest%NOTFOUND;
+
+			--Find the max number of legs. We calculate price on different criteria depending on the number of legs.
+			select max(leg) into leg_max from reservation_detail
+			where reservation_number = reservation_temp;
+
+			--If the flight is direct, then we check to see if the flight arrival time is before its departure time, indicating a red-eye and thus a low price flight
+			if leg_max = 1 THEN	
+				select ROWNUM into rn from reservation_detail
+				inner join Flight on reservation_detail.flight_number = Flight.flight_number
+				where reservation_detail.reservation_number = reservation_temp 
+				and reservation_detail.leg = 1 
+				and flight.arrival_time < flight.departure_time;
+
+				--If this flight is a low price flight, subtract the old low price and add the new one.
+				if rn = 1 then
 					update reservation
 					set cost = cost-:old.low_price + :new.low_price
 					where reservation_number = reservation_temp;
 				end if;
-			END LOOP;
-			close c_reservation_num_leg;
+
+			--If the trip has layover, then we check to see whether the flights depart on the same day. Lower priced flights will not depart on the same day.
+			ELSIF leg_max >= 2 THEN
+				select flight_date into date1 from reservation_detail
+				where reservation_detail.reservation_number = reservation_temp 
+				and reservation_detail.leg = 1;
+
+				select flight_date  into date2 from reservation_detail
+				where reservation_detail.reservation_number = reservation_temp 
+				and reservation_detail.leg = 2;
+
+				if date1 <> date2 then
+					update reservation
+					set cost = cost-:old.low_price + :new.low_price
+					where reservation_number = reservation_temp;
+				end if;
+			end if;
 		END LOOP;
-		close c_flight_low;
+		close reservations_with_dest;
+	END IF;
+	if UPDATING('high_price') then
+		open reservations_with_dest;
+		LOOP
+			fetch reservations_with_dest into reservation_temp;
+			EXIT WHEN reservations_with_dest%NOTFOUND;
+
+			select max(leg) into leg_max from reservation_detail
+			where reservation_number = reservation_temp;
+
+			--If the flight is direct, then we check to see if the flight if the arrival time is after the departure time, it's a same day flight and thus high price.
+			if leg_max = 1 THEN	
+				select ROWNUM into rn from reservation_detail
+				inner join Flight on reservation_detail.flight_number = Flight.flight_number
+				where reservation_detail.reservation_number = reservation_temp 
+				and reservation_detail.leg = 1 
+				and flight.arrival_time > flight.departure_time;
+
+				if rn = 1 then
+					update reservation
+					set cost = cost-:old.high_price + :new.high_price
+					where reservation_number = reservation_temp;
+				end if;
+
+			--If the trip has layover, then we check to see whether the flights depart on the same day. Higher priced flights will  depart on the same day.
+			ELSIF leg_max >= 2 THEN
+				select flight_date into date1 from reservation_detail
+				where reservation_detail.reservation_number = reservation_temp 
+				and reservation_detail.leg = 1;
+
+				select flight_date  into date2 from reservation_detail
+				where reservation_detail.reservation_number = reservation_temp 
+				and reservation_detail.leg = 2;
+
+				if date1 = date2 then
+					update reservation
+					set cost = cost-:old.high_price + :new.high_price
+					where reservation_number = reservation_temp;
+				end if;
+			end if;
+		END LOOP;
+		close reservations_with_dest;
 	END IF;
 	END;
 	/
@@ -386,6 +415,7 @@ BEGIN
 		WHERE reservation_number = :new.reservation_number;
 END;
 /
+
 		
 	
 	

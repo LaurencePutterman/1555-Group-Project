@@ -244,6 +244,68 @@ def generateCustomer(num = 200):
 
 	return customer_tups
 
+def reservationsHelper(reservation_number,flight,flight_info,start_city,end_city,resdate,l=1):
+
+	price_info = price[(start_city,end_city)]
+	legs = random.randint(1,2)
+	if flight_info[5] > flight_info[6]:
+		cost = price_info[3]
+	else:
+		cost = price_info[4]
+	if legs == 1:
+		flight_date = dateAfterGivenDate(resdate)
+		d = datetime(1900,1,1)
+		try:
+			d = datetime.strptime(flight_date, '%m-%d-%Y').date()
+		except:
+			print(flight_date)
+		
+		while flight_info[7][d.weekday()] == "-":
+			flight_date = dateAfterGivenDate(flight_date)
+			d = datetime.strptime(flight_date, '%m-%d-%Y').date()
+		
+		reservation_details[(reservation_number,l)] = (reservation_number,flight,dateToSql(flight_date),l)
+		flight_date2 = flight_date
+		l += 1
+	else:
+		for p1 in price:
+			for p2 in price:
+				if p1[0]==start_city and p2[1]==end_city and p1[1] == p2[0]:
+					price1 = p1
+					price2 = p2
+					break
+		for f in flight_tups:
+			connect1 = f
+			if price1[0] == flight_tups[connect1][3] and price1[1] == flight_tups[connect1][4]:
+				break
+		for f in flight_tups:
+			connect2 = f
+			if price2[0] == flight_tups[connect2][3] and price2[1] == flight_tups[connect2][4]:
+				break
+
+		flight_date1 = dateAfterGivenDate(resdate)
+		d = datetime.strptime(flight_date1, '%m-%d-%Y').date()
+		
+		while flight_tups[connect1][7][d.weekday()] == "-":
+			flight_date1 = dateAfterGivenDate(flight_date1)
+			d = datetime.strptime(flight_date1, '%m-%d-%Y').date()
+		
+		flight_date2 =  flight_date1
+		d = datetime.strptime(flight_date2, '%m-%d-%Y').date()
+
+		if flight_tups[connect2][7][d.weekday()] == "-" or flight_tups[connect2][5] > flight_tups[connect1][6]:
+			while flight_tups[connect2][7][d.weekday()] == "-":
+				flight_date2 = dateAfterGivenDate(flight_date2)
+				d = datetime.strptime(flight_date2, '%m-%d-%Y').date()
+		
+
+		reservation_details[(reservation_number,l)] = (reservation_number,connect1,dateToSql(flight_date1),l)
+		l += 1
+		reservation_details[(reservation_number,l)] = (reservation_number,connect2,dateToSql(flight_date2),l)
+		l += 1
+	return (cost,l,flight_date2)
+
+
 
 def generateReservations(num = 300):
 	global flight_tups
@@ -266,126 +328,16 @@ def generateReservations(num = 300):
 		start_city = flight_info[3]
 		end_city = flight_info[4]
 
-		price_info = price[(start_city,end_city)]
-		legs = random.randint(1,2)
-		l = 1
-		if flight_info[5] > flight_info[6]:
-			cost += price_info[3]
-		else:
-			cost += price_info[4]
-		if legs == 1:
-			flight_date = dateAfterGivenDate(resdate)
-			d = datetime(1900,1,1)
-			try:
-				d = datetime.strptime(flight_date, '%m-%d-%Y').date()
-			except:
-				print(flight_date)
-			
-			while flight_info[7][d.weekday()] == "-":
-				flight_date = dateAfterGivenDate(flight_date)
-				d = datetime.strptime(flight_date, '%m-%d-%Y').date()
-			
-			reservation_details[(reservation_number,legs)] = (reservation_number,flight,dateToSql(flight_date),l)
-			flight_date2 = flight_date
-			l += 1
-		else:
-			for p1 in price:
-				for p2 in price:
-					if p1[0]==start_city and p2[1]==end_city and p1[1] == p2[0]:
-						price1 = p1
-						price2 = p2
-						break
-			for f in flight_tups:
-				connect1 = f
-				if price1[0] == flight_tups[connect1][3] and price1[1] == flight_tups[connect1][4]:
-					break
-			for f in flight_tups:
-				connect2 = f
-				if price2[0] == flight_tups[connect2][3] and price2[1] == flight_tups[connect2][4]:
-					break
-
-			flight_date1 = dateAfterGivenDate(resdate)
-			d = datetime.strptime(flight_date1, '%m-%d-%Y').date()
-			
-			while flight_tups[connect1][7][d.weekday()] == "-":
-				flight_date1 = dateAfterGivenDate(flight_date1)
-				d = datetime.strptime(flight_date1, '%m-%d-%Y').date()
-			
-			flight_date2 =  dateAfterGivenDate(flight_date1)
-			d = datetime.strptime(flight_date2, '%m-%d-%Y').date()
-			
-			while flight_tups[connect2][7][d.weekday()] == "-":
-				flight_date2 = dateAfterGivenDate(flight_date2)
-				d = datetime.strptime(flight_date2, '%m-%d-%Y').date()
-			
-
-			reservation_details[(reservation_number,l)] = (reservation_number,connect1,dateToSql(flight_date1),l)
-			l += 1
-			reservation_details[(reservation_number,l)] = (reservation_number,connect2,dateToSql(flight_date2),l)
-			l += 1
-
-
-
+		results = reservationsHelper(reservation_number,flight,flight_info,start_city,end_city,resdate)
+		cost += results[0]
 		if oneWayOrRoundTripSelect > 50: #round trip
-			swap = start_city
-			start_city = end_city
-			end_city = swap
 			for f in flight_tups:
 				return_flight_info = flight_tups[f]
 				flight = f
-				if start_city == return_flight_info[3] and end_city == return_flight_info[4]:
+				if start_city == return_flight_info[4] and end_city == return_flight_info[3]:
 					break
-
-			price_info = price[(start_city,end_city)]
-			if return_flight_info[5] > return_flight_info[6]:
-				cost += price_info[3]
-			else:
-				cost += price_info[4]
-			legs = random.randint(1,2)
-			if legs == 1:
-				flight_date = dateAfterGivenDate(flight_date2)
-				d = datetime.strptime(flight_date, '%m-%d-%Y').date()
-				
-				while return_flight_info[7][d.weekday()] == "-":
-					flight_date = dateAfterGivenDate(flight_date)
-					d = datetime.strptime(flight_date, '%m-%d-%Y').date()
-				
-				reservation_details[(reservation_number,legs)] = (reservation_number,flight,dateToSql(flight_date),l)
-			else:
-				for p1 in price:
-					for p2 in price:
-						if p1[0]==start_city and p2[1]==end_city and p1[1] == p2[0]:
-							price1 = p1
-							price2 = p2
-							break
-				for f in flight_tups:
-					connect1 = f
-					if price1[0] == flight_tups[connect1][3] and price1[1] == flight_tups[connect1][4]:
-						break
-				for f in flight_tups:
-					connect2 = f
-					if price2[0] == flight_tups[connect2][3] and price2[1] == flight_tups[connect2][4]:
-						break
-
-				flight_date1 = dateAfterGivenDate(flight_date)
-				d = datetime.strptime(flight_date1, '%m-%d-%Y').date()
-				
-				while flight_tups[connect1][7][d.weekday()] == "-":
-					flight_date1 = dateAfterGivenDate(flight_date1)
-					d = datetime.strptime(flight_date1, '%m-%d-%Y').date()
-				
-				flight_date2 =  dateAfterGivenDate(flight_date1)
-				d = datetime.strptime(flight_date2, '%m-%d-%Y').date()
-				
-				while flight_tups[connect2][7][d.weekday()] == "-":
-					flight_date2 = dateAfterGivenDate(flight_date2)
-					d = datetime.strptime(flight_date2, '%m-%d-%Y').date()
-				
-
-				reservation_details[(reservation_number,l)] = (reservation_number,connect1,dateToSql(flight_date1),l)
-				l += 1
-				reservation_details[(reservation_number,l)] = (reservation_number,connect2,dateToSql(flight_date2),l)
-
+			results2 = reservationsHelper(reservation_number,flight,return_flight_info,end_city,start_city,results[2],results[1])
+			cost += results2[0]
 
 		reservation_tups[reservation_number] = (reservation_number,cid,cost,credit_card,dateToSql(resdate),ticketSelection,start_city,end_city)
 
