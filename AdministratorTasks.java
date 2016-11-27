@@ -83,6 +83,7 @@ public class AdministratorTasks
 				loadPlaneInfo();
 				break;
 			case '6':
+				createManifest();
 				break;
 			case 'Q':
 				break;
@@ -181,6 +182,58 @@ public class AdministratorTasks
 	*/
   }
   
+  //ask the user for a flight number and date, and print the info of all passengers with TICKETED reservations on that flight
+  private void createManifest()
+  {
+	String flightNumber;
+	String date;
+	Statement statement = null;
+	ResultSet passengers;
+	String query;
+	try{
+		statement = connection.createStatement();
+	}catch(SQLException e){
+		System.out.println("Error: connection to database failed");
+		return;
+	}
+	while(true){
+		System.out.println("Enter the number of the flight for which to print the manifest, or enter Q to quit:");
+		flightNumber = keyboard.nextLine();
+		if(flightNumber.toLowerCase().equals("q")){
+			return;
+		}
+		System.out.println("Enter the date of the flight in the format MM/DD/YYYY");
+		date = keyboard.nextLine();
+		try{
+			query = "SELECT salutation, first_name, last_name FROM (Reservation_detail NATURAL JOIN Reservation) JOIN Customer ON Customer.CID=Reservation.CID WHERE flight_number = '" + flightNumber + "' AND flight_date = to_date('" + date + "', 'MM/DD/YYYY')";
+			//query = "SELECT salutation, first_name, last_name FROM (Reservation_detail NATURAL JOIN Reservation) JOIN Customer ON Customer.CID=Reservation.CID WHERE flight_number = '69' AND flight_date = to_date('04-11-2007', 'MM-DD-YYYY')";
+			passengers = statement.executeQuery(query);
+			int counter = 0;
+			while(passengers.next()){
+				System.out.println(passengers.getString(1) + " " + passengers.getString(2) + " " + passengers.getString(3));
+				counter++;
+			}
+			if(counter == 0){
+				//ResultSet has no rows
+				System.out.println("The specified flight does not exist or currently has no passengers.  Would you like to try another flight? Y/N");
+				if(keyboard.nextLine().toLowerCase().equals("y")){
+				  continue;
+				}else{
+				  return;
+				} 
+			}
+			System.out.println();
+			return;
+		}catch(SQLException f){
+			System.out.println("Error, your data may have been incorrectly formatted.  Would you like to try again? Y/N");
+			System.out.println(f.getMessage());
+			if(!keyboard.nextLine().toLowerCase().equals("y")){
+				return;
+			}
+		}
+	}
+  }
+  
   private void loadPlaneInfo()
   {
 	String input = "";
@@ -194,6 +247,7 @@ public class AdministratorTasks
 		insertStatement = connection.prepareStatement(query);
 	}catch(SQLException e){
 		System.out.println("Error: connection to database failed");
+		return;
 	}
 	while(planeInfo == null){
 		System.out.println("Please enter the name of the file containing the plane information, or enter \"Q\" to quit");
@@ -259,6 +313,7 @@ public class AdministratorTasks
 		updateStatement = connection.prepareStatement(updateQuery);
 	}catch(SQLException e){
 		System.out.println("Error: connection to database failed");
+		return;
 	}
 	
 	while(option != 'Q'){
