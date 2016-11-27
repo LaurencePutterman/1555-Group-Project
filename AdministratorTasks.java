@@ -24,6 +24,8 @@ import java.io.*;
 import java.sql.*;  //import the file containing definitions for the parts
                     //needed by java for database connection and manipulation
 import java.util.Scanner;
+import java.util.InputMismatchException; //used to check formatting of files
+import java.text.ParseException; //used to check date formatting
 public class AdministratorTasks
 {
   private Connection connection; //used to hold the jdbc connection to the DB
@@ -78,6 +80,7 @@ public class AdministratorTasks
 				loadPricingInfo();
 				break;
 			case '5':
+				loadPlaneInfo();
 				break;
 			case '6':
 				break;
@@ -178,10 +181,86 @@ public class AdministratorTasks
 	*/
   }
   
+  private void loadPlaneInfo()
+  {
+	String input = "";
+	String query = "INSERT INTO Plane values(?,?,?,?,?,?)";
+	PreparedStatement insertStatement = null;
+	java.text.SimpleDateFormat df = new java.text.SimpleDateFormat("MM/dd/yyyy");
+    java.sql.Date lastService = null;
+	File planeInfoFile;
+	Scanner planeInfo = null;
+	try{
+		insertStatement = connection.prepareStatement(query);
+	}catch(SQLException e){
+		System.out.println("Error: connection to database failed");
+	}
+	while(planeInfo == null){
+		System.out.println("Please enter the name of the file containing the plane information, or enter \"Q\" to quit");
+		input = keyboard.nextLine();
+		if(input.equals("Q") || input.equals("q")){
+			return;
+		}
+		try{
+			planeInfoFile = new File(input);
+			planeInfo = new Scanner(planeInfoFile);
+		}catch(IOException f){
+			System.out.println("Error opening specified file; please try again");
+			planeInfo = null;
+		}
+	}
+	while(planeInfo.hasNext()){
+		Scanner currentTuple = null;
+		try{
+			currentTuple = new Scanner(planeInfo.nextLine()).useDelimiter("\\s*,\\s*");
+			insertStatement.setString(1, currentTuple.next());
+			insertStatement.setString(2, currentTuple.next());
+			insertStatement.setLong(3, currentTuple.nextLong());
+			input = currentTuple.next();
+			lastService = new java.sql.Date (df.parse(input).getTime());
+			if(lastService == null){
+				//parse failed
+				throw new InputMismatchException();
+			}
+			insertStatement.setDate(4, lastService);
+			insertStatement.setLong(5, currentTuple.nextLong());
+			insertStatement.setString(6, currentTuple.next());
+			
+			insertStatement.execute();
+			//System.out.println("Successfully executed insert");
+		}catch(InputMismatchException ime){
+			System.out.println("Error: file is improperly formatted. Could not read all or part of file.");
+			break;
+		}catch(ParseException p){
+			System.out.println("Error: file is improperly formatted. Could not read all or part of file.");
+			break;
+		}catch(SQLException sqle){
+			System.out.println("Unhandled exception when inserting from file into database");
+			System.out.println(sqle.getMessage());
+			break;
+		}
+	}
+  }
+  
   private void loadPricingInfo()
   {
 	String input = "";
 	char option = 0;
+	String query = "INSERT INTO Price values(?,?,?,?,?)";
+	String updateQuery = "UPDATE Price SET high_price = ?, low_Price = ? WHERE departure_city = ? AND arrival_city = ?";
+	PreparedStatement insertStatement = null;
+	PreparedStatement updateStatement = null;
+	long lowPrice = -1;
+	long highPrice = -1;
+	String departureCity = "";
+	String arrivalCity = "";
+	try{
+		insertStatement = connection.prepareStatement(query);
+		updateStatement = connection.prepareStatement(updateQuery);
+	}catch(SQLException e){
+		System.out.println("Error: connection to database failed");
+	}
+	
 	while(option != 'Q'){
 		System.out.println("Enter \"L\" to load pricing information from a file, or enter \"C\" to update the information for an existing flight. Enter \"Q\" to quit.");
 		input = keyboard.nextLine();
@@ -203,14 +282,86 @@ public class AdministratorTasks
 					}
 					try{
 						pricingInfoFile = new File(input);
-						pricingInfo = new Scanner(pricingInfoFile).useDelimiter("\\s*,\\s*");
+						pricingInfo = new Scanner(pricingInfoFile);
 					}catch(IOException e){
 						System.out.println("Error opening the specified file. Please try again.");
 						pricingInfo = null;
+						continue;
+					}
+					while(pricingInfo.hasNext()){
+						Scanner currentTuple = null;
+						try{
+							currentTuple = new Scanner(pricingInfo.nextLine()).useDelimiter("\\s*,\\s*");
+							departureCity = currentTuple.next();
+							insertStatement.setString(1, departureCity);
+							arrivalCity = currentTuple.next();
+							insertStatement.setString(2, arrivalCity);
+							insertStatement.setString(3, currentTuple.next());
+							highPrice = currentTuple.nextLong();
+							insertStatement.setLong(4, highPrice);
+							lowPrice = currentTuple.nextLong();
+							insertStatement.setLong(5, lowPrice);
+							
+							insertStatement.execute();
+							//System.out.println("Successfully executed insert");
+						}catch(InputMismatchException ime){
+							System.out.println("Error: file is improperly formatted. Could not read all or part of file.");
+							break;
+						}catch(SQLException sqle){
+							//if this is a primary key violation, we want to update the prices rather than inserting
+							if(sqle.getSQLState().startsWith("23")){
+								//System.err.println("Attempting update");
+								try{
+									updateStatement.setLong(1, highPrice);
+									updateStatement.setLong(2, lowPrice);
+									updateStatement.setString(3, departureCity);
+									updateStatement.setString(4, arrivalCity);
+									updateStatement.executeUpdate();
+								}catch(Exception e){
+									System.out.println("Unhandled exception when inserting from file into database:");
+									System.out.println(e.getMessage());
+									break;
+								}
+							}else{
+								System.out.println("Unhandled exception when inserting from file into database:");
+								System.out.println(sqle.getMessage());
+								break;
+							}
+						}
 					}
 				}
+				pricingInfo.close();
 				break;
 			case 'C':
+				System.out.println("Enter the departure city of the route to be updated:");
+				departureCity = keyboard.nextLine();
+				System.out.println("Enter the arrival city of the route to be updated:");
+				arrivalCity = keyboard.nextLine();
+				while(true){
+					try{
+						System.out.println("Enter the new high price:");
+						highPrice = Long.parseLong(keyboard.nextLine());
+						System.out.println("Enter the new low price:");
+						lowPrice = Long.parseLong(keyboard.nextLine());
+						if(lowPrice < 0 || highPrice < 0 || lowPrice > highPrice){
+							System.out.println("Error, please make sure that prices are >= 0 and that the high price is >= the low price");
+						}else{
+							break;
+						}
+					}catch(NumberFormatException nf){
+						System.out.println("Error, please be sure to enter a number when prompted");
+					}
+				}
+				try{
+					updateStatement.setLong(1, highPrice);
+					updateStatement.setLong(2, lowPrice);
+					updateStatement.setString(3, departureCity);
+					updateStatement.setString(4, arrivalCity);
+					updateStatement.executeUpdate();
+				}catch(SQLException se){
+					System.out.println("Error: unable to perform update.");
+					System.out.println(se.getMessage());
+				}
 				break;
 			case 'Q': 
 				break;
@@ -219,6 +370,8 @@ public class AdministratorTasks
 		}
 	}
   }
+  
+  
 	
 
   public static void main(String args[])
