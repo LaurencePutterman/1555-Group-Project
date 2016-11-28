@@ -29,10 +29,6 @@ import java.text.ParseException; //used to check date formatting
 public class AdministratorTasks
 {
   private Connection connection; //used to hold the jdbc connection to the DB
-  private Statement statement; //used to create an instance of the connection
-  private ResultSet resultSet; //used to hold the result of your query (if one
-                               // exists)
-  private String query;  //this will hold the query we are using
   private String username, password;
   private Scanner keyboard;
 
@@ -94,92 +90,6 @@ public class AdministratorTasks
 	}
 	
 	System.out.println("Exiting program...");
-/*
-    int counter = 1;
-    //We will now perform a simple query to the database, asking it for all the
-    //records it has.  For your project, performing queries will be similar
-    try{
-      statement = connection.createStatement(); //create an instance
-      query = "SELECT * FROM Test"; //sample query one
-
-      resultSet = statement.executeQuery(query); //run the query on the DB table
-      //the results in resultSet have an odd quality.  The first row in result
-      //set is not relevant data, but rather a place holder.  This enables us to
-      //use a while loop to go through all the records.  We must move the pointer
-      //forward once using resultSet.next() or you will get errors
-
-      while(resultSet.next()) //this not only keeps track of if another record
-                              //exists but moves us forward to the first record
-      {
-        System.out.println("Record " + counter + ": " +
-             resultSet.getString(1) + ", " + //since the first item was of type
-                                            //string, we use getString of the
-                                            //resultSet class to access it.
-                                            //Notice the one, that is the
-                                            //position of the answer in the
-                                            //resulting table
-             resultSet.getLong(2) + ", " +   //since second item was number(10),
-                                          //we use getLong to access it
-             resultSet.getDate(3)); //since type date, getDate.
-		counter++;
-      }
-
-
-      //Now, we show an insert, using preparedStatement. Of course for this you can also write the query directly as the //above case with select, and vice versa. 
-      
-      String name = "tester 2";
-      long ssn = 111111113;
-
-      
-      java.text.SimpleDateFormat df = new java.text.SimpleDateFormat("yyyy-MM-dd");
-     
-      java.sql.Date bday = new java.sql.Date (df.parse("1990-01-20").getTime());
-
-      query = "insert into Test values (?,?,?)";
-     
-      PreparedStatement updateStatement = connection.prepareStatement(query);
-      updateStatement.setString(1, name);
-      updateStatement.setLong(2,ssn);
-      updateStatement.setDate(3,bday);
-    
-      updateStatement.executeUpdate();
-    	
-      
-      // We can also so the insert statement directly as follows:
-
-      // query = "INSERT INTO Test VALUES ('Tester', 111111112, '1/Nov/03')";
-      //int result = statement.executeUpdate(query); //executing update returns 
-      //either the row count for INSERT, UPDATE or DELETE or 0 for SQL
-      //statements that return nothing
-
-      	
-
-      //I will show the insert worked by selecting the content of the table again
-      //statement = connection.createStatement();
-      query = "SELECT * FROM Test";
-      resultSet = statement.executeQuery(query);
-      System.out.println("\nAfter the insert, data is...\n");
-	counter=1;
-      while(resultSet.next())
-      {
-        System.out.println("Record " + counter + ": " +
-             resultSet.getString(1) + ", " +
-             resultSet.getLong(2) + ", " +
-             resultSet.getDate(3));
-	  counter ++;
-      }
-
-      connection.close();
-    
-    }
-    catch(Exception Ex)
-    {
-      System.out.println("Error running the sample queries.  Machine Error: " +
-            Ex.toString());
-    }
-
-    System.out.println("Good Luck");
-	*/
   }
   
   //ask the user for a flight number and date, and print the info of all passengers with TICKETED reservations on that flight
