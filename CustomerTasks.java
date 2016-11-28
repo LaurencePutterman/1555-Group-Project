@@ -161,7 +161,7 @@ public class CustomerTasks
 	}
   }
   
-  //private void addReservationDetail(String start, String
+  
   private String getDate(String prompt)
   {
 	java.text.SimpleDateFormat df = new java.text.SimpleDateFormat("MM/dd/yyyy");
