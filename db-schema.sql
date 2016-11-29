@@ -79,6 +79,7 @@ create table customer(
 		deferrable,
 	constraint customer_salutations check (salutation in ('Mr','Mrs','Ms')),
 	constraint customer_frequent_miles_fk foreign key (frequent_miles) references Airline(airline_id)
+		deferrable
 );
 
 drop table Reservation cascade constraints;
@@ -157,7 +158,7 @@ END;
 
 --This trigger selects the smallest plane that will hold all passengers whenever a reservation_detail entry is inserted or deleted
 CREATE OR REPLACE TRIGGER planeUpgrade
-before insert or delete
+before insert
 on reservation_detail
 for each row
 DECLARE
@@ -184,19 +185,21 @@ BEGIN
 	--ASSUMPTION: all legs with the same flight_Number and same flight_date are the same flight
 	SELECT count(*) into numPassengers
 		FROM reservation_detail R
-		WHERE R.flight_number = :new.flight_number AND R.flight_date = flightDate;
+		WHERE R.flight_number = flightNum AND R.flight_date = flightDate;
 	--Retrieve all planes owned by that airline that can hold the current number of passengers, and retrieve the type of the smallest one (order asc by capacity and select rownum = 1)
 	SELECT plane_type into new_plane
-		FROM Plane
-		WHERE owner_id = airlineId AND plane_capacity >= numPassengers and rownum = 1
-		ORDER BY plane_capacity asc;
+		FROM (SELECT plane_type FROM Plane
+			WHERE owner_id = airlineId AND plane_capacity >= numPassengers
+			ORDER BY plane_capacity asc)
+		WHERE rownum = 1;
 	--Update the Flight with the (potentially) new plane
 	UPDATE Flight SET plane_type = new_plane WHERE flight_number = flightNum;
-EXCEPTION
-	WHEN NO_DATA_FOUND THEN
+--THE BELOW DOES NOT WORK
+--EXCEPTION
+	--WHEN NO_DATA_FOUND THEN
 		--failed to find a big enough plane - cancel the new reservation
 		--should only arrive here during insertions
-		DELETE FROM reservation_detail WHERE leg = :new.leg AND reservation_number = :new.reservation_number;
+		--DELETE FROM reservation_detail WHERE leg = :new.leg AND reservation_number = :new.reservation_number;
 END;
 /
 
@@ -370,12 +373,12 @@ BEGIN
 				--use low price
 				SELECT low_price into currentPrice
 					FROM Price
-					WHERE departure_city = startCity AND arrival_city = endCity AND airline_id = currentFlight.airline_id;
+					WHERE departure_city = startCity AND arrival_city = endCity; --AND airline_id = currentFlight.airline_id;
 			ELSE
 				--not overnight - use high price
 				SELECT high_price into currentPrice
 					FROM Price
-					WHERE departure_city = startCity AND arrival_city = endCity AND airline_id = currentFlight.airline_id;
+					WHERE departure_city = startCity AND arrival_city = endCity; --AND airline_id = currentFlight.airline_id;
 			END IF;
 			IF currentFlight.airline_id = frequentAirline THEN
 				--the customer is flying on their frequent airline and receives a 10% discount
@@ -392,12 +395,12 @@ BEGIN
 				--use low price
 				SELECT low_price into currentPrice
 					FROM Price
-					WHERE departure_city = endCity AND arrival_city = startCity AND airline_id = currentFlight.airline_id;
+					WHERE departure_city = endCity AND arrival_city = startCity; --AND airline_id = currentFlight.airline_id;
 			ELSE
 				--not overnight
 					SELECT high_price into currentPrice
 						FROM Price
-						WHERE departure_city = endCity AND arrival_city = startCity AND airline_id = currentFlight.airline_id;
+						WHERE departure_city = endCity AND arrival_city = startCity; --AND airline_id = currentFlight.airline_id;
 			END IF;
 			IF currentFlight.airline_id = frequentAirline THEN
 				--customer is flying their frequent airline
