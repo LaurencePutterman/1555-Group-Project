@@ -101,11 +101,13 @@ public class CustomerTasks
 				findAllRoutesWithSeatsBtwTwoCitiesOnDayForAirline();
 				break;
 			case '8':
-				//makeReservation();
+				makeReservation();
 				break;
 			case '9':
+				showReservationInfoGivenNumber();
 				break;
 			case '0':
+				buyTicketOnReservation();
 				break;
 			case 'Q':
 				break;
@@ -994,6 +996,99 @@ public class CustomerTasks
 			}
 		}
 	}catch(SQLException e){
+		System.out.println("Unhandled SQLException: ");
+		//System.out.println(e.getMessage());
+		e.printStackTrace();
+	}
+  }
+  private void showReservationInfoGivenNumber()
+  {
+  	String query = "SELECT f.flight_number, rd.flight_date, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, a.airline_name, r.cost, r.ticketed, r.start_city, r.end_city FROM flight f inner join reservation_detail rd on f.flight_number = rd.flight_number inner join reservation r on rd.reservation_number = r.reservation_number inner join airline a on f.airline_id = a.airline_id where rd.reservation_number = ? order by rd.leg ASC";
+  	PreparedStatement preparedStatement;
+  	ResultSet rs;
+  	String reservation_number;
+  	try{
+  		preparedStatement = connection.prepareStatement(query);
+  		while(true){
+			System.out.println("Please enter your reservation number");
+			reservation_number = keyboard.nextLine();
+
+			preparedStatement.setString(1,reservation_number);
+
+			rs = preparedStatement.executeQuery();
+
+			boolean hasResult = rs.next();
+			if(hasResult){
+				System.out.println("\n**Reservation Details**");
+				System.out.println("Start City: "+rs.getString(10));
+				System.out.println("End City: "+rs.getString(11));
+				System.out.println("Cost: "+rs.getInt(8));
+				System.out.println("Ticketed: "+rs.getString(9));
+				int count = 1;
+				System.out.println("\n**Flights**");
+				do{
+					System.out.println("\nFlight "+count+":");
+					System.out.println("Airline: "+rs.getString(7));
+					System.out.println("Flight Number: "+rs.getString(1));
+					System.out.println("Flight Date: "+rs.getDate(2));
+					System.out.println("Departure City: "+rs.getString(3));
+					System.out.println("Arrival City: "+rs.getString(4));
+					System.out.println("Departure Time: "+rs.getString(5));
+					System.out.println("Arrival Time: "+rs.getString(6));
+					count++;
+				}while(rs.next());
+			}
+			else{
+				System.out.println("Reservation not found.");
+			}
+
+			System.out.println("\nWould you like to try another?\n Y/N");
+			if(keyboard.nextLine().toLowerCase().equals("y")){
+				continue;
+			}else{
+				break;
+			}
+
+  		}
+  	} catch(SQLException e){
+		System.out.println("Unhandled SQLException: ");
+		//System.out.println(e.getMessage());
+		e.printStackTrace();
+	}
+  }
+  private void buyTicketOnReservation()
+  {
+  	String query="UPDATE reservation r set r.ticketed = 'Y' where r.reservation_number = ? and r.ticketed = 'N'";
+  	PreparedStatement preparedStatement;
+  	int rows;
+  	String reservation_number;
+
+  	try{
+  		preparedStatement = connection.prepareStatement(query);
+  		while(true){
+			System.out.println("Please enter your reservation number");
+			reservation_number = keyboard.nextLine();
+
+			preparedStatement.setString(1,reservation_number);
+
+			rows = preparedStatement.executeUpdate();
+			if(rows > 0){
+				System.out.println("\nReservation purchased!");
+				
+			}
+			else{
+				System.out.println("Reservation not found or already purchased.");
+			}
+
+			System.out.println("\nWould you like to try another?\n Y/N");
+			if(keyboard.nextLine().toLowerCase().equals("y")){
+				continue;
+			}else{
+				break;
+			}
+
+  		}
+  	} catch(SQLException e){
 		System.out.println("Unhandled SQLException: ");
 		//System.out.println(e.getMessage());
 		e.printStackTrace();
