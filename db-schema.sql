@@ -416,6 +416,9 @@ BEGIN
 	UPDATE Reservation
 		SET cost = totalPrice
 		WHERE reservation_number = :new.reservation_number;
+EXCEPTION
+	WHEN NO_DATA_FOUND THEN
+		dbms_output.put_line('Error in set price trigger: customer for the reservation_detail may not exist in the db');
 END;
 /
 

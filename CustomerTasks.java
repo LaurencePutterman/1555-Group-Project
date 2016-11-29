@@ -43,8 +43,8 @@ public class CustomerTasks
     try blocks*/
     //username = "shb64"; //This is your username in oracle
     //password = "3556313"; //This is your password in oracle
-    username = "mlp81";
-    password = "3808669";
+    username = "shb64";
+    password = "3556313";
     try{
       //Register the oracle driver.  This needs the oracle files provided
       //in the oracle.zip file, unzipped into the local directory and 
@@ -1097,6 +1097,7 @@ public class CustomerTasks
   private void makeReservation()
   {
 	String startingAirport;
+	String cid;
 	String destinationAirport;
 	boolean isRoundTrip;
 	String reservationNum;
@@ -1112,24 +1113,32 @@ public class CustomerTasks
 		return;
 	}
 	try{
-		//go ahead and get the next reservation_number to use with the legs and to avoid fk violations
-		//issue a query to discover the highest reservation_number in the db
-		query = "SELECT * FROM (SELECT reservation_number FROM Reservation ORDER BY to_number(reservation_number) desc) WHERE rownum = 1";
-		rs = statement.executeQuery(query);
-		//rs should be a single result with just the highest reservation_number as an attribute
-		rs.next();
-		//add 1 to current highest reservation_num
-		reservationNum = String.valueOf(Integer.parseInt(rs.getString(1)) + 1);
-		//add the new reservation to db (can be rolled back)
-		query = "INSERT INTO Reservation (reservation_number) VALUES ('" + reservationNum + "')";
-		statement.execute(query);
+		//get the customer's cid
+		cid = "";
+		System.out.println("Please enter your customer id");
+		while(true){
+			cid = keyboard.nextLine();
+			if(cid.toLowerCase().equals("q")){
+				connection.setAutoCommit(true);
+				return;
+			}
+			query = "SELECT * FROM Customer WHERE cid = '" + cid + "'";
+			rs = statement.executeQuery(query);
+			if(!rs.next()){//no results returned
+				System.out.println("Error, customer id not found.  Please try again or enter q to quit.");
+			}else{
+				break;
+			}
+		}
+
 		while(true){
 			System.out.println("Please enter the departure city for your trip.");
 			startingAirport = keyboard.nextLine();
 			System.out.println("Please enter the destination city for your trip.");
 			destinationAirport = keyboard.nextLine();
+			
 			//check to see if the database contains pricing data for this trip
-			query = "SELECT * FROM Price WHERE departure_city = '" + startingAirport + "' AND arrival_city = '" + destinationAirport+ "'";
+			query = "SELECT * FROM Price WHERE departure_city = '" + startingAirport + "' AND arrival_city = '" + destinationAirport + "'";
 			rs = statement.executeQuery(query);
 			if(!rs.next()){
 				//no results returned
@@ -1138,19 +1147,105 @@ public class CustomerTasks
 				if(keyboard.nextLine().toLowerCase().equals("y")){
 					continue;
 				}else{
-					break;
+					connection.rollback();
+					connection.setAutoCommit(true);
+					return;
 				}
-			}	
-			System.out.println("Is this a round-trip? Y/N");
-			isRoundTrip = keyboard.nextLine().toLowerCase().equals("y");
-			String currentFlightNum;
-			String currentDate;
-			int currentLeg = 1;
-			//get first leg info
-			currentFlightNum = getFlightNum("Please enter the flight number for your first flight", statement);
-			currentDate = getDate("Please enter the date for your first flight");
-			//add to reservation_detail
-		}	
+			}else{
+				break;
+			}
+		}
+		//go ahead and get the next reservation_number to use with the legs and to avoid fk violations
+		//issue a query to discover the highest reservation_number in the db
+		query = "SELECT * FROM (SELECT reservation_number FROM Reservation ORDER BY to_number(reservation_number) desc) WHERE rownum = 1";
+		rs = statement.executeQuery(query);
+		//rs should be a single result with just the highest reservation_number as an attribute
+		if(rs.next()){
+			//add 1 to current highest reservation_num
+			reservationNum = String.valueOf(Integer.parseInt(rs.getString(1)) + 1);
+		}else{
+			//no reservations in db - make this reservation 1
+			reservationNum = "1";
+		}
+		//add the new reservation to db (can be rolled back)
+		query = "INSERT INTO Reservation (reservation_number, cid, ticketed, start_city, end_city) VALUES ('" + reservationNum + "', '" + cid + "', 'N', '" + startingAirport + "', '" + destinationAirport + "')";
+		statement.execute(query);
+		
+		System.out.println("Is this a round-trip? Y/N");
+		isRoundTrip = keyboard.nextLine().toLowerCase().equals("y");
+		String currentFlightNum = "";
+		String currentDate;
+		String lastArrival = startingAirport;
+		String currentArrival;
+		int currentLeg = 1;
+		String[] flightPrompts = {"Please enter the flight number for your first flight, or enter \"Q\" to quit", "Please enter the flight number for your second flight, or enter \"Q\" to quit", "Please enter the flight number for your first return flight, or enter \"Q\" to quit","Please enter the flight number for your second return flight, or enter \"Q\" to quit"};
+		String[] datePrompts = {"Please enter the date for your first flight", "Please enter the date for your second flight", "Please enter the date for your first return flight", "Please enter the date for your second return flight"};
+		//track the current status of the trip-in-progress (i.e. first flight, first return flight, etc.)
+		int currentStatus = 0;
+		//get first leg info
+		while(currentStatus < 4){//max 4 flights
+			currentFlightNum = getFlightNum(flightPrompts[currentStatus], statement);
+			if(currentFlightNum.toLowerCase().equals("q")){
+				break;
+			}
+			if(!checkFlight(lastArrival, currentFlightNum, statement)){
+				if(currentStatus == 0){
+					System.out.println("Error: your flight must depart from the departure city for your trip");
+				}else{
+					System.out.println("Error: your flight must depart from the arrival city of the last flight you selected");
+				}
+				continue;
+			}
+			//get arrival city for the specified flight
+			query = "SELECT arrival_city FROM Flight WHERE flight_number = '" + currentFlightNum + "'";
+			rs = statement.executeQuery(query);
+			rs.next(); //flight_number is pk - should be only one result
+			currentArrival = rs.getString(1);
+			
+			if(currentStatus == 1){
+				//arrival city for this flight must be the ultimate destination supplied earlier
+				if(!destinationAirport.equals(currentArrival)){
+					System.out.println("Error: the destination for this flight must be the destination city selected earlier");
+					continue;
+				}
+			}else if(currentStatus == 3){
+				//end of a round-trip: arrival city must be the starting city
+				if(!startingAirport.equals(currentArrival)){
+					System.out.println("Error: the destination for this flight must be the city you started from on this round trip");
+					continue;
+				}
+			}
+			currentDate = getDate(datePrompts[currentStatus]);
+			//add this leg to reservation_detail
+			query = "INSERT INTO Reservation_detail VALUES ('" + reservationNum + "', '" + currentFlightNum + "', to_date('" + currentDate + "', 'MM/DD/YYYY'), " + currentLeg + ")";
+			statement.execute(query);
+			//check to see if the flight is over capacity (in which case leg must be canceled and user informed)
+			
+			//if we're on the outgoing trip, check to see if we've arrived at the destination
+			if(currentArrival.equals(destinationAirport) && currentStatus < 2){
+				if(!isRoundTrip){
+					//trip is done
+					break;
+				}else{
+					//beginning return trip
+					currentStatus = 2;
+				}
+			}else if(currentArrival.equals(startingAirport) && currentStatus >= 2){
+				//we've arrived back to start on a return trip
+				break;//we're done
+			}else{
+				currentStatus++;
+			}
+			lastArrival = currentArrival;
+			currentLeg++;
+		}
+		if(currentFlightNum.toLowerCase().equals("q")){
+			//customer quit mid-dialog
+			connection.rollback();
+		}else{
+			connection.commit();
+			System.out.println("Your reservation has been processed\n");
+		}
 		
 
 		//set autocommit back to true before leaving the function
@@ -1159,14 +1254,30 @@ public class CustomerTasks
 		System.out.println("Unhandled SQLException: ");
 		System.out.println(e.getMessage());
 		try{
+			connection.rollback();
 			connection.setAutoCommit(true);
 		}catch(SQLException se){
 
 		}
 	}
   }
+
+  //returns true if flight is valid
+  private boolean checkFlight(String lastArrival, String flight, Statement s)
+  {
+	ResultSet rs;
+	String query = "SELECT departure_city FROM Flight WHERE flight_number = '" + flight + "'";
+	try{
+		rs = s.executeQuery(query);
+		rs.next();
+		return rs.getString(1).equals(lastArrival);
+	}catch(SQLException e){
+		System.out.println("Error querying database or flight number invalid");
+		return false;
+	}
+  }
   
-  
+  //prompt the user for a valid date
   private String getDate(String prompt)
   {
 	SimpleDateFormat df = new SimpleDateFormat("MM/dd/yyyy");
@@ -1187,6 +1298,7 @@ public class CustomerTasks
 	return dateStr;
   }
   
+  //prompt the user for a valid flight number, or q for quit
   private String getFlightNum(String prompt, Statement s) throws SQLException
   {
 	String flightNum;
@@ -1194,6 +1306,9 @@ public class CustomerTasks
 	while(true){
 		System.out.println(prompt);
 		flightNum = keyboard.nextLine();
+		if(flightNum.toLowerCase().equals("q")){
+			return "q";
+		}
 		String query = "SELECT * FROM Flight WHERE flight_number = '" + flightNum + "'";
 		rs = s.executeQuery(query);
 		if(!rs.next()){
