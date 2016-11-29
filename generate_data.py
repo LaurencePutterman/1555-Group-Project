@@ -92,10 +92,12 @@ def generateFlight(num = 106):
 	for x in range(1,num+1,6):
 		i = x
 		#flight there
+		constant_air_id = ""
 		fn = "'"+str(i)+"'"
 		plane = random.choice(plane_tups.keys())
 		p_type = plane[0]
-		air_id = plane[1]
+		air_id = str(plane[1])
+		constant_air_id = air_id
 		departure_city = "'"+random.choice(airports)+"'"
 		arrival_city = "'"+random.choice(airports)+"'"
 		departure_time = random.randint(0,2359)
@@ -106,18 +108,18 @@ def generateFlight(num = 106):
 		while departure_city == arrival_city or (departure_city,arrival_city) in price:
 			arrival_city = "'"+random.choice(airports)+"'"
 
-		flight_tups[fn] = (fn,air_id,p_type,departure_city,arrival_city,departure_time,arrival_time,weekly_schedule)
+		flight_tups[fn] = (fn,"'"+air_id+"'",p_type,departure_city,arrival_city,departure_time,arrival_time,weekly_schedule)
 
-		price[(departure_city,arrival_city)] = (departure_city,arrival_city,air_id,random.randint(500, 1000), random.randint(100,499))
+		price[(departure_city,arrival_city)] = (departure_city,arrival_city,"'"+air_id+"'",random.randint(500, 1000), random.randint(100,499))
 
 		#make sure a connection exists
 		i += 1
 		fn = "'"+str(i)+"'"
 		plane = random.choice(plane_tups.keys())
-		while plane[1] != air_id:
+		while str(plane[1]) != constant_air_id:
 			plane = random.choice(plane_tups.keys())
 		p_type = plane[0]
-		air_id = plane[1]
+		air_id = str(plane[1])
 		departure_city_connect1 = departure_city
 		arrival_city_connect1 = "'"+random.choice(airports)+"'"
 		departure_time = random.randint(0,2359)
@@ -128,18 +130,18 @@ def generateFlight(num = 106):
 		while departure_city_connect1 == arrival_city_connect1 or (departure_city_connect1,arrival_city_connect1) in price:
 			arrival_city_connect1 = "'"+random.choice(airports)+"'"
 
-		flight_tups[fn] = (fn,air_id,p_type,departure_city_connect1,arrival_city_connect1,departure_time,arrival_time,weekly_schedule)
+		flight_tups[fn] = (fn,"'"+air_id+"'",p_type,departure_city_connect1,arrival_city_connect1,departure_time,arrival_time,weekly_schedule)
 
-		price[(departure_city_connect1,arrival_city_connect1)] = (departure_city_connect1,arrival_city_connect1,air_id,random.randint(500, 1000), random.randint(100,499))
+		price[(departure_city_connect1,arrival_city_connect1)] = (departure_city_connect1,arrival_city_connect1,"'"+air_id+"'",random.randint(500, 1000), random.randint(100,499))
 
 		#connection 2
 		i += 1
 		fn = "'"+str(i)+"'"
 		plane = random.choice(plane_tups.keys())
-		while plane[1] != air_id:
+		while str(plane[1]) != constant_air_id:
 			plane = random.choice(plane_tups.keys())
 		p_type = plane[0]
-		air_id = plane[1]
+		air_id = str(plane[1])
 		departure_city_connect2 = arrival_city_connect1
 		arrival_city_connect2 = arrival_city
 		departure_time = random.randint(0,2359)
@@ -148,9 +150,9 @@ def generateFlight(num = 106):
 		while arrival_time == departure_time:
 			arrival_time = random.randint(0,2359)
 
-		flight_tups[fn] = (fn,air_id,p_type,departure_city_connect2,arrival_city_connect2,departure_time,arrival_time,weekly_schedule)
+		flight_tups[fn] = (fn,"'"+air_id+"'",p_type,departure_city_connect2,arrival_city_connect2,departure_time,arrival_time,weekly_schedule)
 
-		price[(departure_city_connect2,arrival_city_connect2)] = (departure_city_connect2,arrival_city_connect2,air_id,random.randint(500, 1000), random.randint(100,499))
+		price[(departure_city_connect2,arrival_city_connect2)] = (departure_city_connect2,arrival_city_connect2,"'"+air_id+"'",random.randint(500, 1000), random.randint(100,499))
 
 
 		#flight back
@@ -160,7 +162,7 @@ def generateFlight(num = 106):
 		# while plane[1] != air_id:
 		# 	plane = random.choice(plane_tups.keys())
 		p_type = plane[0]
-		air_id = plane[1]
+		air_id = str(plane[1])
 		departure_city_back = arrival_city
 		arrival_city_back = departure_city
 		departure_time = random.randint(0,2359)
@@ -169,18 +171,18 @@ def generateFlight(num = 106):
 		while arrival_time == departure_time:
 			arrival_time = random.randint(0,2359)
 
-		flight_tups[fn] = (fn,air_id,p_type,departure_city_back,arrival_city_back,departure_time,arrival_time,weekly_schedule)
+		flight_tups[fn] = (fn,"'"+air_id+"'",p_type,departure_city_back,arrival_city_back,departure_time,arrival_time,weekly_schedule)
 
-		price[(departure_city_back,arrival_city_back)] = (departure_city_back,arrival_city_back,air_id,random.randint(500, 1000), random.randint(100,499))
+		price[(departure_city_back,arrival_city_back)] = (departure_city_back,arrival_city_back,"'"+air_id+"'",random.randint(500, 1000), random.randint(100,499))
 
 		#make sure a connection exists
 		i += 1
 		fn = "'"+str(i)+"'"
 		plane = random.choice(plane_tups.keys())
-		while plane[1] != air_id:
+		while str(plane[1]) != constant_air_id:
 			plane = random.choice(plane_tups.keys())
 		p_type = plane[0]
-		air_id = plane[1]
+		air_id = str(plane[1])
 		departure_city_connect1 = departure_city_back
 		arrival_city_connect1 = departure_city_connect2
 		departure_time = random.randint(0,2359)
@@ -189,18 +191,18 @@ def generateFlight(num = 106):
 		while arrival_time == departure_time:
 			arrival_time = random.randint(0,2359)
 
-		flight_tups[fn] = (fn,air_id,p_type,departure_city_connect1,arrival_city_connect1,departure_time,arrival_time,weekly_schedule)
+		flight_tups[fn] = (fn,"'"+air_id+"'",p_type,departure_city_connect1,arrival_city_connect1,departure_time,arrival_time,weekly_schedule)
 
-		price[(departure_city_connect1,arrival_city_connect1)] = (departure_city_connect1,arrival_city_connect1,air_id,random.randint(500, 1000), random.randint(100,499))
+		price[(departure_city_connect1,arrival_city_connect1)] = (departure_city_connect1,arrival_city_connect1,"'"+air_id+"'",random.randint(500, 1000), random.randint(100,499))
 
 		#connection 2
 		i += 1
 		fn = "'"+str(i)+"'"
 		plane = random.choice(plane_tups.keys())
-		while plane[1] != air_id:
+		while str(plane[1]) != constant_air_id:
 			plane = random.choice(plane_tups.keys())
 		p_type = plane[0]
-		air_id = plane[1]
+		air_id = str(plane[1])
 		departure_city_connect2 = arrival_city_connect1
 		arrival_city_connect2 = departure_city
 		departure_time = random.randint(0,2359)
@@ -209,9 +211,9 @@ def generateFlight(num = 106):
 		while arrival_time == departure_time:
 			arrival_time = random.randint(0,2359)
 			
-		flight_tups[fn] = (fn,air_id,p_type,departure_city_connect2,arrival_city_connect2,departure_time,arrival_time,weekly_schedule)
+		flight_tups[fn] = (fn,"'"+air_id+"'",p_type,departure_city_connect2,arrival_city_connect2,departure_time,arrival_time,weekly_schedule)
 
-		price[(departure_city_connect2,arrival_city_connect2)] = (departure_city_connect2,arrival_city_connect2,air_id,random.randint(500, 1000), random.randint(100,499))
+		price[(departure_city_connect2,arrival_city_connect2)] = (departure_city_connect2,arrival_city_connect2,"'"+air_id+"'",random.randint(500, 1000), random.randint(100,499))
 
 	return flight_tups
 
