@@ -1,25 +1,3 @@
-/*
-    Here is an example of connecting to a database using jdbc
-
-    The table we will use in the example is
-    Table Test(
-       name     varchar(30),
-       ssn      number(10),
-       bday     date
-    );
-    
-    For demostratration purpose, insert two records into this table:
-    ( 'Mike', 123456789, '09/Nov/03' )
-    ( 'Amy', 987654321, '10/Nov/03' )
-
-    Written by: Jonathan Beaver, modified by Thao Pham
-    Purpose: Demo JDBC for CS1555 Class
-
-    IMPORTANT (otherwise, your code may not compile)	
-    Same as using sqlplus, you need to set oracle environment variables by 
-    sourcing bash.env or tcsh.env
-*/
-
 import java.io.*;
 import java.sql.*;  //import the file containing definitions for the parts
                     //needed by java for database connection and manipulation
@@ -63,7 +41,7 @@ public class AdministratorTasks
 	String input = "";
 	keyboard = new Scanner(System.in);
 	while(option != 'Q'){
-		System.out.println("Please select an operation by entering the corresponding number, or enter \"Q\" to quit.\n4: Load pricing information\n5: Load plane information\n6: Generate passenger manifest");
+		System.out.println("Please select an operation by entering the corresponding number, or enter \"Q\" to quit.\n1: Delete all data from the database\n2: Load airline information\n3: Load flight schedule information\n4: Load pricing information\n5: Load plane information\n6: Generate passenger manifest");
 		input = keyboard.nextLine();
 		if(input.length() == 1){
 			option = input.toUpperCase().charAt(0);
@@ -72,6 +50,15 @@ public class AdministratorTasks
 		}
 		switch(option)
 		{
+			case '1':
+				eraseDatabase();
+				break;
+			case '2':
+				loadAirlineInfo();
+				break;
+			case '3':
+				loadFlightInfo();
+				break;
 			case '4':
 				loadPricingInfo();
 				break;
@@ -141,6 +128,177 @@ public class AdministratorTasks
 				return;
 			}
 		}
+	}
+  }
+  
+  private void loadFlightInfo()
+  {
+	String input = "";
+	String query = "INSERT INTO Flight values(?,?,?,?,?,?,?,?)";
+	PreparedStatement insertStatement = null;
+	File flightInfoFile;
+	Scanner flightInfo = null;
+	boolean badParse = false;
+	try{
+		insertStatement = connection.prepareStatement(query);
+		connection.setAutoCommit(false); //this will allow us to roll back the deletion if something goes wrong
+	}catch(SQLException e){
+		System.out.println("Error: connection to database failed");
+		return;
+	}
+	while(flightInfo == null){
+		System.out.println("Please enter the name of the file containing the flight information, or enter \"Q\" to quit");
+		input = keyboard.nextLine();
+		if(input.equals("Q") || input.equals("q")){
+			return;
+		}
+		try{
+			flightInfoFile = new File(input);
+			flightInfo = new Scanner(flightInfoFile);
+		}catch(IOException f){
+			System.out.println("Error opening specified file; please try again");
+			flightInfo = null;
+		}
+	}
+	while(flightInfo.hasNext()){
+		Scanner currentTuple = null;
+		try{
+			String currentToken;
+			currentTuple = new Scanner(flightInfo.nextLine()).useDelimiter("\\s*,\\s*");
+			
+			insertStatement.setString(1, currentTuple.next());
+			insertStatement.setString(2, currentTuple.next());
+			insertStatement.setString(3, currentTuple.next());
+			insertStatement.setString(4, currentTuple.next());
+			insertStatement.setString(5, currentTuple.next());
+			insertStatement.setString(6, currentTuple.next());
+			insertStatement.setString(7, currentTuple.next());
+			insertStatement.setString(8, currentTuple.next());
+			
+			insertStatement.execute();
+			//System.out.println("Successfully executed insert");
+		}catch(InputMismatchException ime){
+			System.out.println("Error: file is improperly formatted. Could not read all or part of file.");
+			try{
+				connection.rollback();
+			}catch(SQLException h) {}
+			badParse = true;
+			break;
+		}catch(SQLException sqle){
+			System.out.println("Unhandled exception when inserting from file into database");
+			System.out.println(sqle.getMessage());
+			try{
+				connection.rollback();
+			}catch(SQLException h) {}
+			badParse = true;
+			break;
+		}
+	}
+	try{
+		if(!badParse){
+			connection.commit();
+		}
+		connection.setAutoCommit(true);
+	}catch(SQLException g){}
+  }
+  
+  private void loadAirlineInfo()
+  {
+	String input = "";
+	String query = "INSERT INTO Airline values(?,?,?,?)";
+	PreparedStatement insertStatement = null;
+	File airlineInfoFile;
+	Scanner airlineInfo = null;
+	boolean badParse = false;
+	try{
+		insertStatement = connection.prepareStatement(query);
+		connection.setAutoCommit(false); //this will allow us to roll back the deletion if something goes wrong
+	}catch(SQLException e){
+		System.out.println("Error: connection to database failed");
+		return;
+	}
+	while(airlineInfo == null){
+		System.out.println("Please enter the name of the file containing the airline information, or enter \"Q\" to quit");
+		input = keyboard.nextLine();
+		if(input.equals("Q") || input.equals("q")){
+			return;
+		}
+		try{
+			airlineInfoFile = new File(input);
+			airlineInfo = new Scanner(airlineInfoFile);
+		}catch(IOException f){
+			System.out.println("Error opening specified file; please try again");
+			airlineInfo = null;
+		}
+	}
+	while(airlineInfo.hasNext()){
+		Scanner currentTuple = null;
+		try{
+			currentTuple = new Scanner(airlineInfo.nextLine()).useDelimiter("\\s*,\\s*");
+			insertStatement.setString(1, currentTuple.next());
+			insertStatement.setString(2, currentTuple.next());
+			insertStatement.setString(3, currentTuple.next());
+			insertStatement.setLong(4, currentTuple.nextLong());
+			
+			insertStatement.execute();
+			//System.out.println("Successfully executed insert");
+		}catch(InputMismatchException ime){
+			System.out.println("Error: file is improperly formatted. Could not read all or part of file.");
+			try{
+				connection.rollback();
+			}catch(SQLException h) {}
+			badParse = true;
+			break;
+		}catch(SQLException sqle){
+			System.out.println("Unhandled exception when inserting from file into database");
+			System.out.println(sqle.getMessage());
+			try{
+				connection.rollback();
+			}catch(SQLException h) {}
+			badParse = true;
+			break;
+		}
+	}
+	try{
+		if(!badParse){
+			connection.commit();
+		}
+		connection.setAutoCommit(true);
+	}catch(SQLException g){}
+  }
+  
+  private void eraseDatabase()
+  {
+	System.out.println("WARNING: You are about to delete all data in the database.  Are you sure you want to proceed? Y/N");
+	if(keyboard.nextLine().toLowerCase().equals("y"))
+	{
+		try{
+			connection.setAutoCommit(false); //this will allow us to roll back the deletion if something goes wrong
+			Statement statement = connection.createStatement();
+			//delete data from all tables
+			statement.execute("SET CONSTRAINTS ALL DEFERRED");
+			statement.execute("DELETE FROM Reservation_detail");
+			statement.execute("DELETE FROM Reservation");
+			statement.execute("DELETE FROM Customer");
+			statement.execute("DELETE FROM Price");
+			statement.execute("DELETE FROM Flight");
+			statement.execute("DELETE FROM Plane");
+			statement.execute("DELETE FROM Airline");
+			
+			connection.commit();
+			
+		}catch(SQLException e){
+			System.out.println("Unhandled SQL exception while deleting data from database: ");
+			System.out.println(e.getMessage());
+			try{
+				connection.rollback();
+			}catch(SQLException g){}
+		}
+	}
+	try{
+		connection.setAutoCommit(true);
+	}catch(SQLException f){
+		System.out.println("Failed to set AutoCommit back to true - future operations may not work");
 	}
   }
   
