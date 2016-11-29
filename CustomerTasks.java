@@ -20,10 +20,10 @@
     sourcing bash.env or tcsh.env
 */
 
-import java.lang.Math;
-import java.util.Date;
-import java.text.SimpleDateFormat;
-import java.io.*;
+    import java.lang.Math;
+    import java.util.Date;
+    import java.text.SimpleDateFormat;
+    import java.io.*;
 import java.sql.*;  //import the file containing definitions for the parts
                     //needed by java for database connection and manipulation
 import java.util.Scanner;
@@ -49,96 +49,96 @@ public class CustomerTasks
       //Register the oracle driver.  This needs the oracle files provided
       //in the oracle.zip file, unzipped into the local directory and 
       //the class path set to include the local directory
-      DriverManager.registerDriver (new oracle.jdbc.driver.OracleDriver());
+    	DriverManager.registerDriver (new oracle.jdbc.driver.OracleDriver());
       //This is the location of the database.  This is the database in oracle
       //provided to the class
-      String url = "jdbc:oracle:thin:@class3.cs.pitt.edu:1521:dbclass"; 
-      
-      connection = DriverManager.getConnection(url, username, password); 
+    	String url = "jdbc:oracle:thin:@class3.cs.pitt.edu:1521:dbclass"; 
+
+    	connection = DriverManager.getConnection(url, username, password); 
       //create a connection to DB on class3.cs.pitt.edu
     }
     catch(Exception Ex)  //What to do with any exceptions
     {
-      System.out.println("Error connecting to database.  Machine Error: " +
-            Ex.toString());
-	Ex.printStackTrace();
+    	System.out.println("Error connecting to database.  Machine Error: " +
+    		Ex.toString());
+    	Ex.printStackTrace();
     }
-	System.out.println("Welcome, customer");
-	char option = 0;
-	String input = "";
-	keyboard = new Scanner(System.in);
-	while(option != 'Q'){
-		System.out.println("Please select an operation by entering the corresponding number, or enter \"Q\" to quit.\n1: Add customer\n2: Show customer information\n3: Find prices for flights between cities\n4: Find flights for a given route\n5: Find flights for a given route on an airline\n6: Find flights for a given route on a particular date\n7: Find flights for a given route on a particular date with an airline\n8: Add reservation\n9: Get reservation information\n10: Buy ticket");
-		input = keyboard.nextLine();
-		if(input.length() == 1){
-			option = input.toUpperCase().charAt(0);
-		}else if (input.equals("10")){
-			option = '0';
-		}else{
-			option = 0;
-		}
-		switch(option)
-		{
-			case '1':
-				addCustomer();
-				break;
-			case '2':
-				showCustomerInfo();
-				break;
-			case '3':
-				findPriceForFlightsBetweenTwoCities();
-				break;
-			case '4':
-				findAllRoutesBetweenTwoCities();
-				break;
-			case '5':
-				findAllRoutesBtwTwoCitiesForAirline();
-				break;
-			case '6':
-				findAllRoutesWithSeatsBtwTwoCitiesOnDay();
-				break;
-			case '7':
-				findAllRoutesWithSeatsBtwTwoCitiesOnDayForAirline();
-				break;
-			case '8':
-				makeReservation();
-				break;
-			case '9':
-				showReservationInfoGivenNumber();
-				break;
-			case '0':
-				buyTicketOnReservation();
-				break;
-			case 'Q':
-				break;
-			default:
-				System.out.println("Invalid input; please try again.");
-		}
-		
-	}
-	
-	System.out.println("Exiting program...");
-  }
-  private void addCustomer()
-  {
-  	String query;
-  	PreparedStatement preparedStatement;
-  	ResultSet rs;
-  	String first_name;
-  	String last_name;
-  	String salutation;
-  	String credit_car_num;
-  	String street;
-  	String city;
-  	String state;
-  	String phone;
-  	String email;
-  	String expirationDateString;
-  	Date credit_card_expire = null;
-  	String cid;
+    System.out.println("Welcome, customer");
+    char option = 0;
+    String input = "";
+    keyboard = new Scanner(System.in);
+    while(option != 'Q'){
+    	System.out.println("Please select an operation by entering the corresponding number, or enter \"Q\" to quit.\n1: Add customer\n2: Show customer information\n3: Find prices for flights between cities\n4: Find flights for a given route\n5: Find flights for a given route on an airline\n6: Find flights for a given route on a particular date\n7: Find flights for a given route on a particular date with an airline\n8: Add reservation\n9: Get reservation information\n10: Buy ticket");
+    	input = keyboard.nextLine();
+    	if(input.length() == 1){
+    		option = input.toUpperCase().charAt(0);
+    	}else if (input.equals("10")){
+    		option = '0';
+    	}else{
+    		option = 0;
+    	}
+    	switch(option)
+    	{
+    		case '1':
+    			addCustomer();
+    			break;
+    		case '2':
+	    		showCustomerInfo();
+	    		break;
+    		case '3':
+	    		findPriceForFlightsBetweenTwoCities();
+	    		break;
+    		case '4':
+	    		findAllRoutesBetweenTwoCities();
+	    		break;
+    		case '5':
+	    		findAllRoutesBtwTwoCitiesForAirline();
+	    		break;
+    		case '6':
+	    		findAllRoutesWithSeatsBtwTwoCitiesOnDay();
+	    		break;
+    		case '7':
+	    		findAllRoutesWithSeatsBtwTwoCitiesOnDayForAirline();
+	    		break;
+    		case '8':
+	    		makeReservation();
+	    		break;
+    		case '9':
+	    		showReservationInfoGivenNumber();
+	    		break;
+    		case '0':
+	    		buyTicketOnReservation();
+	    		break;
+    		case 'Q':
+    			break;
+    		default:
+    			System.out.println("Invalid input; please try again.");
+    	}
+
+    }
+
+    System.out.println("Exiting program...");
+}
+private void addCustomer()
+{
+	String query;
+	PreparedStatement preparedStatement;
+	ResultSet rs;
+	String first_name;
+	String last_name;
+	String salutation;
+	String credit_car_num;
+	String street;
+	String city;
+	String state;
+	String phone;
+	String email;
+	String expirationDateString;
+	Date credit_card_expire = null;
+	String cid;
 
 
-  	try{
+	try{
 		//want everything to be one transaction so it can easily be rolled back
 		connection.setAutoCommit(false);
 	}catch(SQLException e){
@@ -235,8 +235,8 @@ public class CustomerTasks
 
 			//Insert customer information
 			query =  "INSERT INTO "
-					+"customer (cid,salutation,first_name,last_name,credit_car_num,credit_card_expire,street,city,state,phone,email) "
-					+"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+			+"customer (cid,salutation,first_name,last_name,credit_car_num,credit_card_expire,street,city,state,phone,email) "
+			+"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 			preparedStatement = connection.prepareStatement(query);
 			preparedStatement.setString(1,cid);
@@ -279,16 +279,16 @@ public class CustomerTasks
 		}
 		
 	}
-  }  
-  private void showCustomerInfo()
-  {
-  	String query = "SELECT * FROM customer WHERE first_name = ? and last_name = ?";
-  	PreparedStatement preparedStatement;
-  	ResultSet rs;
-  	String first_name;
-  	String last_name;
+}  
+private void showCustomerInfo()
+{
+	String query = "SELECT * FROM customer WHERE first_name = ? and last_name = ?";
+	PreparedStatement preparedStatement;
+	ResultSet rs;
+	String first_name;
+	String last_name;
 
-  	try{
+	try{
 		while(true){
 			System.out.println("Please enter customer's first name.");
 			first_name = keyboard.nextLine();
@@ -334,15 +334,15 @@ public class CustomerTasks
 		System.out.println("Unhandled SQLException: ");
 		System.out.println(e.getMessage());
 	}
-  }
-  private void findPriceForFlightsBetweenTwoCities()
-  {
+}
+private void findPriceForFlightsBetweenTwoCities()
+{
 	String query;
-  	PreparedStatement preparedStatement;
-  	ResultSet rs1;
-  	ResultSet rs2;
-  	String city_a;
-  	String city_b;
+	PreparedStatement preparedStatement;
+	ResultSet rs1;
+	ResultSet rs2;
+	String city_a;
+	String city_b;
 
 	try{
 		while(true){
@@ -397,15 +397,15 @@ public class CustomerTasks
 		System.out.println("Unhandled SQLException: ");
 		System.out.println(e.getMessage());
 	}
-  }
-  private void findAllRoutesBetweenTwoCities()
-  {
-  	String query;
-  	PreparedStatement preparedStatement;
-  	ResultSet rs1;
-  	ResultSet rs2;
-  	String city_a;
-  	String city_b;
+}
+private void findAllRoutesBetweenTwoCities()
+{
+	String query;
+	PreparedStatement preparedStatement;
+	ResultSet rs1;
+	ResultSet rs2;
+	String city_a;
+	String city_b;
 
 	try{
 		while(true){
@@ -524,16 +524,16 @@ public class CustomerTasks
 		//System.out.println(e.getMessage());
 		e.printStackTrace();
 	}
-  }
-  private void findAllRoutesBtwTwoCitiesForAirline()
-  {
-  	String query;
-  	PreparedStatement preparedStatement;
-  	ResultSet rs1;
-  	ResultSet rs2;
-  	String city_a;
-  	String city_b;
-  	String airline_name;
+}
+private void findAllRoutesBtwTwoCitiesForAirline()
+{
+	String query;
+	PreparedStatement preparedStatement;
+	ResultSet rs1;
+	ResultSet rs2;
+	String city_a;
+	String city_b;
+	String airline_name;
 
 	try{
 		while(true){
@@ -662,17 +662,17 @@ public class CustomerTasks
 		//System.out.println(e.getMessage());
 		e.printStackTrace();
 	}
-  }
-  private void findAllRoutesWithSeatsBtwTwoCitiesOnDay()
-  {
-  	String query;
-  	PreparedStatement preparedStatement;
-  	ResultSet rs1;
-  	ResultSet rs2;
-  	String city_a;
-  	String city_b;
-  	Date flight_date = null;
-  	SimpleDateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+}
+private void findAllRoutesWithSeatsBtwTwoCitiesOnDay()
+{
+	String query;
+	PreparedStatement preparedStatement;
+	ResultSet rs1;
+	ResultSet rs2;
+	String city_a;
+	String city_b;
+	Date flight_date = null;
+	SimpleDateFormat df = new SimpleDateFormat("MM/dd/yyyy");
 
 	try{
 		while(true){
@@ -828,17 +828,17 @@ public class CustomerTasks
 		//System.out.println(e.getMessage());
 		e.printStackTrace();
 	}
-  }
-  private void findAllRoutesWithSeatsBtwTwoCitiesOnDayForAirline(){
-  	String query;
-  	PreparedStatement preparedStatement;
-  	ResultSet rs1;
-  	ResultSet rs2;
-  	String city_a;
-  	String city_b;
-  	String airline_name;
-  	Date flight_date = null;
-  	SimpleDateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+}
+private void findAllRoutesWithSeatsBtwTwoCitiesOnDayForAirline(){
+	String query;
+	PreparedStatement preparedStatement;
+	ResultSet rs1;
+	ResultSet rs2;
+	String city_a;
+	String city_b;
+	String airline_name;
+	Date flight_date = null;
+	SimpleDateFormat df = new SimpleDateFormat("MM/dd/yyyy");
 
 	try{
 		while(true){
@@ -1000,16 +1000,16 @@ public class CustomerTasks
 		//System.out.println(e.getMessage());
 		e.printStackTrace();
 	}
-  }
-  private void showReservationInfoGivenNumber()
-  {
-  	String query = "SELECT f.flight_number, rd.flight_date, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, a.airline_name, r.cost, r.ticketed, r.start_city, r.end_city FROM flight f inner join reservation_detail rd on f.flight_number = rd.flight_number inner join reservation r on rd.reservation_number = r.reservation_number inner join airline a on f.airline_id = a.airline_id where rd.reservation_number = ? order by rd.leg ASC";
-  	PreparedStatement preparedStatement;
-  	ResultSet rs;
-  	String reservation_number;
-  	try{
-  		preparedStatement = connection.prepareStatement(query);
-  		while(true){
+}
+private void showReservationInfoGivenNumber()
+{
+	String query = "SELECT f.flight_number, rd.flight_date, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, a.airline_name, r.cost, r.ticketed, r.start_city, r.end_city FROM flight f inner join reservation_detail rd on f.flight_number = rd.flight_number inner join reservation r on rd.reservation_number = r.reservation_number inner join airline a on f.airline_id = a.airline_id where rd.reservation_number = ? order by rd.leg ASC";
+	PreparedStatement preparedStatement;
+	ResultSet rs;
+	String reservation_number;
+	try{
+		preparedStatement = connection.prepareStatement(query);
+		while(true){
 			System.out.println("Please enter your reservation number");
 			reservation_number = keyboard.nextLine();
 
@@ -1049,23 +1049,23 @@ public class CustomerTasks
 				break;
 			}
 
-  		}
-  	} catch(SQLException e){
+		}
+	} catch(SQLException e){
 		System.out.println("Unhandled SQLException: ");
 		//System.out.println(e.getMessage());
 		e.printStackTrace();
 	}
-  }
-  private void buyTicketOnReservation()
-  {
-  	String query="UPDATE reservation r set r.ticketed = 'Y' where r.reservation_number = ? and r.ticketed = 'N'";
-  	PreparedStatement preparedStatement;
-  	int rows;
-  	String reservation_number;
+}
+private void buyTicketOnReservation()
+{
+	String query="UPDATE reservation r set r.ticketed = 'Y' where r.reservation_number = ? and r.ticketed = 'N'";
+	PreparedStatement preparedStatement;
+	int rows;
+	String reservation_number;
 
-  	try{
-  		preparedStatement = connection.prepareStatement(query);
-  		while(true){
+	try{
+		preparedStatement = connection.prepareStatement(query);
+		while(true){
 			System.out.println("Please enter your reservation number");
 			reservation_number = keyboard.nextLine();
 
@@ -1087,15 +1087,15 @@ public class CustomerTasks
 				break;
 			}
 
-  		}
-  	} catch(SQLException e){
+		}
+	} catch(SQLException e){
 		System.out.println("Unhandled SQLException: ");
 		//System.out.println(e.getMessage());
 		e.printStackTrace();
 	}
-  }
-  private void makeReservation()
-  {
+}
+private void makeReservation()
+{
 	String startingAirport;
 	String cid;
 	String destinationAirport;
@@ -1319,13 +1319,7 @@ public class CustomerTasks
 		}
 	}
 	return flightNum;
-	  
-  }
-  
-	
 
-  public static void main(String args[])
-  {
-    CustomerTasks adminInterface = new CustomerTasks();
-  }
+}
+
 }

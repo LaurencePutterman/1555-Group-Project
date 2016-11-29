@@ -494,11 +494,4 @@ public class AdministratorTasks
 	}
   }
   
-  
-	
-
-  public static void main(String args[])
-  {
-    AdministratorTasks adminInterface = new AdministratorTasks();
-  }
 }
