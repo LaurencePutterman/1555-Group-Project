@@ -1220,6 +1220,25 @@ private void makeReservation()
 			query = "INSERT INTO Reservation_detail VALUES ('" + reservationNum + "', '" + currentFlightNum + "', to_date('" + currentDate + "', 'MM/DD/YYYY'), " + currentLeg + ")";
 			statement.execute(query);
 			//check to see if the flight is over capacity (in which case leg must be canceled and user informed)
+			long planeCapacity;
+			long passengerCount;
+			query = "SELECT plane_capacity FROM Plane NATURAL JOIN Flight WHERE flight_number = '" + currentFlightNum + "' AND owner_id = airline_id";
+			rs = statement.executeQuery(query);
+			rs.next();
+			planeCapacity = rs.getLong(1);
+			//System.out.println("Plane capacity is " + planeCapacity);
+			query = "SELECT count(*) FROM reservation_detail WHERE flight_number = '" + currentFlightNum + "' and flight_date = to_date('" + currentDate + "', 'MM/DD/YYYY')";
+			rs = statement.executeQuery(query);
+			rs.next();
+			passengerCount = rs.getLong(1);
+			//System.out.println("Flight contains " + passengerCount + " passengers.");
+			if(passengerCount > planeCapacity){
+				//flight is full
+				query = "DELETE FROM reservation_detail WHERE flight_number = '" + currentFlightNum + "' AND flight_date = to_date('" + currentDate + "', 'MM/DD/YYYY')";
+				statement.execute(query);
+				System.out.println("Could not make reservation: the selected flight is full.");
+				continue;
+			}
 			
 			//if we're on the outgoing trip, check to see if we've arrived at the destination
 			if(currentArrival.equals(destinationAirport) && currentStatus < 2){
@@ -1244,7 +1263,7 @@ private void makeReservation()
 			connection.rollback();
 		}else{
 			connection.commit();
-			System.out.println("Your reservation has been processed\n");
+			System.out.println("Your reservation has been processed and your reservation number is " + reservationNum + "\n");
 		}
 		
 
