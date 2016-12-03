@@ -122,6 +122,60 @@ create table SystemDate(
 		deferrable
 );
 
+--given a flight number and date, return the passenger count
+CREATE OR REPLACE FUNCTION getNumPassengers (flightNum IN varchar, flightDate IN date)
+RETURN int
+AS
+numPassengers int;
+BEGIN
+	SELECT count(*) into numPassengers
+	FROM reservation_detail
+	WHERE flight_number = flightNum AND flight_date = flightDate;
+	
+	return numPassengers;
+END;
+/
+
+--given a reservation number, delete all associated reservation_details and move the Flight to a smaller plane if appropriate
+CREATE OR REPLACE PROCEDURE deleteAndDownsize(resNum in varchar)
+AS
+	cursor c_trip_legs is
+		select *
+		from reservation_detail
+		where reservation_number = resNum
+		order by leg asc;
+	currentLeg reservation_detail%ROWTYPE;
+	passengerCount integer;
+	currentAirline Airline.airline_id%type;
+	new_plane plane.plane_type%type;
+BEGIN
+	IF NOT c_trip_legs%ISOPEN THEN
+		open c_trip_legs;
+	END IF;
+	LOOP
+		FETCH c_trip_legs INTO currentLeg;
+		EXIT WHEN c_trip_legs%NOTFOUND;
+		--get the number of passengers currently on this flight
+		passengerCount := getNumPassengers(currentLeg.flight_number, currentLeg.flight_date);
+		--after deletion, count of passengers will be current passengerCount - 1
+		passengerCount := passengerCount - 1;
+		--get the airline for this flight
+		SELECT Airline_id INTO currentAirline FROM Flight WHERE flight_number = currentLeg.flight_number;
+		--Find the smallest plane that will be able to hold the new number of passengers
+		SELECT plane_type into new_plane
+		FROM (SELECT plane_type FROM Plane
+			WHERE owner_id = currentAirline AND plane_capacity >= (passengerCount)
+			ORDER BY plane_capacity asc)
+		WHERE rownum = 1;
+		--Update the Flight with the (potentially) new plane
+		UPDATE Flight SET plane_type = new_plane WHERE flight_number = currentLeg.flight_number;
+		--Delete the current leg from reservation_detail
+		DELETE FROM Reservation_detail WHERE reservation_number = currentLeg.reservation_number AND leg = currentLeg.leg;
+		
+	END LOOP;
+END;
+/
+
 --assumption for this trigger: c_date is incremented every second, and this trigger will run each time and check
 --for reservation_detail entries that are exactly 12 hours away
 CREATE OR REPLACE TRIGGER cancelReservation
@@ -146,11 +200,9 @@ BEGIN
 		FETCH c_to_cancel INTO cur_reservation;
 		EXIT WHEN c_to_cancel%NOTFOUND;
 		--have to delete from reservation_detail first because of integrity constraints
-		delete from reservation_detail
-			where reservation_number = cur_reservation;
+		deleteAndDownsize(cur_reservation);
 		delete from reservation
 			where reservation_number = cur_reservation;
-		--IMPORTANT NOTE: changing the plane size is handled by the planeUpgrade trigger, which triggers on each deletion from reservation_detail!
 	END LOOP;
 	close c_to_cancel;
 END;
