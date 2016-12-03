@@ -156,7 +156,7 @@ BEGIN
 END;
 /
 
---This trigger selects the smallest plane that will hold all passengers whenever a reservation_detail entry is inserted or deleted
+--This trigger selects the smallest plane that will hold all passengers whenever a reservation_detail entry is inserted
 CREATE OR REPLACE TRIGGER planeUpgrade
 before insert
 on reservation_detail
@@ -170,13 +170,13 @@ DECLARE
 	flightDate reservation_detail.flight_date%type;
 BEGIN
 	--set up variables so trigger works with both insertion and delete
-	IF INSERTING THEN
+	--IF INSERTING THEN
 		flightNum := :new.flight_number;
 		flightDate := :new.flight_date;
-	ELSE --DELETING
-		flightNum := :old.flight_number;
-		flightDate := :old.flight_date;
-	END IF;
+	--ELSE --DELETING
+	--	flightNum := :old.flight_number;
+	--	flightDate := :old.flight_date;
+	--END IF;
 	--Get the airline for the new reservation
 	SELECT airline_id into airlineId
 			FROM Flight F
@@ -189,7 +189,7 @@ BEGIN
 	--Retrieve all planes owned by that airline that can hold the current number of passengers, and retrieve the type of the smallest one (order asc by capacity and select rownum = 1)
 	SELECT plane_type into new_plane
 		FROM (SELECT plane_type FROM Plane
-			WHERE owner_id = airlineId AND plane_capacity >= numPassengers
+			WHERE owner_id = airlineId AND plane_capacity >= (numPassengers + 1) --passenger hasn't been inserted yet, so actual count is numPassengers + 1s
 			ORDER BY plane_capacity asc)
 		WHERE rownum = 1;
 	--Update the Flight with the (potentially) new plane

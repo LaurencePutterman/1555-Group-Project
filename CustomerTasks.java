@@ -1263,7 +1263,7 @@ private void makeReservation()
 			connection.rollback();
 		}else{
 			connection.commit();
-			System.out.println("Your reservation has been processed and your reservation number is " + reservationNum + "\n");
+			System.out.println("Your reservation has been processed and your reservation number is " + reservationNum + ".\n");
 		}
 		
 
