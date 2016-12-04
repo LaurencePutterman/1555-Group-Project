@@ -348,7 +348,11 @@ def exportTupsToSql(d,tableName):
 	for x in d:
 		returnString += "INSERT INTO "+tableName+" VALUES ("+','.join(map(str, d[x]))+");\n"
 	return returnString
-
+def exportTupsToCSV(d):
+	returnString = ""
+	for x in d:
+		returnString += ",".join(map(str,d[x])) +"\n"
+	return returnString
 if __name__ == "__main__":
 
 
@@ -358,14 +362,27 @@ if __name__ == "__main__":
 	generateCustomer()
 	generateReservations()
 
-	with open('sample_data.sql', 'a') as the_file:
-	    the_file.write(exportTupsToSql(airline_tups,"Airline")+"\ncommit;\n")
-	    the_file.write(exportTupsToSql(plane_tups,"Plane")+"\ncommit;\n")
-	    the_file.write(exportTupsToSql(flight_tups,"Flight")+"\ncommit;\n")
-	    the_file.write(exportTupsToSql(price,"Price")+"\ncommit;\n")
-	    the_file.write(exportTupsToSql(customer_tups,"Customer")+"\ncommit;\n")
-	    the_file.write(exportTupsToSql(reservation_tups,"Reservation")+"\ncommit;\n")
-	    the_file.write(exportTupsToSql(reservation_details,"Reservation_detail")+"\ncommit;\n")
+	# with open('sample_data.sql', 'a') as the_file:
+	#     the_file.write(exportTupsToSql(airline_tups,"Airline")+"\ncommit;\n")
+	#     the_file.write(exportTupsToSql(plane_tups,"Plane")+"\ncommit;\n")
+	#     the_file.write(exportTupsToSql(flight_tups,"Flight")+"\ncommit;\n")
+	#     the_file.write(exportTupsToSql(price,"Price")+"\ncommit;\n")
+	#     the_file.write(exportTupsToSql(customer_tups,"Customer")+"\ncommit;\n")
+	#     the_file.write(exportTupsToSql(reservation_tups,"Reservation")+"\ncommit;\n")
+	#     the_file.write(exportTupsToSql(reservation_details,"Reservation_detail")+"\ncommit;\n")
+
+	with open('airline_information.csv', 'a') as the_file:
+		the_file.write(exportTupsToCSV(airline_tups))
+
+	with open('schedule_information.csv', 'a') as the_file:
+		the_file.write(exportTupsToCSV(flight_tups))
+
+	with open('pricing_information.csv', 'a') as the_file:
+		the_file.write(exportTupsToCSV(price))
+
+	with open('plane_information.csv', 'a') as the_file:
+		the_file.write(exportTupsToCSV(plane_tups))
+
 
 
 
