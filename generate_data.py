@@ -355,33 +355,41 @@ def exportTupsToCSV(d):
 	return returnString
 if __name__ == "__main__":
 
+	for i in range(10):
+		airline_tups = {}
+		plane_tups = {}
+		customer_tups = {}
+		reservation_tups = {}
+		reservation_details = {}
+		flight_tups = {}
+		price = {}
+		generateAirline()
+		generatePlane()
+		generateFlight()
+		generateCustomer()
+		generateReservations()
 
-	generateAirline()
-	generatePlane()
-	generateFlight()
-	generateCustomer()
-	generateReservations()
+		# with open('sample_data.sql', 'a') as the_file:
+		#     the_file.write(exportTupsToSql(airline_tups,"Airline")+"\ncommit;\n")
+		#     the_file.write(exportTupsToSql(plane_tups,"Plane")+"\ncommit;\n")
+		#     the_file.write(exportTupsToSql(flight_tups,"Flight")+"\ncommit;\n")
+		#     the_file.write(exportTupsToSql(price,"Price")+"\ncommit;\n")
+		#     the_file.write(exportTupsToSql(customer_tups,"Customer")+"\ncommit;\n")
+		#     the_file.write(exportTupsToSql(reservation_tups,"Reservation")+"\ncommit;\n")
+		#     the_file.write(exportTupsToSql(reservation_details,"Reservation_detail")+"\ncommit;\n")
 
-	# with open('sample_data.sql', 'a') as the_file:
-	#     the_file.write(exportTupsToSql(airline_tups,"Airline")+"\ncommit;\n")
-	#     the_file.write(exportTupsToSql(plane_tups,"Plane")+"\ncommit;\n")
-	#     the_file.write(exportTupsToSql(flight_tups,"Flight")+"\ncommit;\n")
-	#     the_file.write(exportTupsToSql(price,"Price")+"\ncommit;\n")
-	#     the_file.write(exportTupsToSql(customer_tups,"Customer")+"\ncommit;\n")
-	#     the_file.write(exportTupsToSql(reservation_tups,"Reservation")+"\ncommit;\n")
-	#     the_file.write(exportTupsToSql(reservation_details,"Reservation_detail")+"\ncommit;\n")
 
-	with open('airline_information.csv', 'a') as the_file:
-		the_file.write(exportTupsToCSV(airline_tups))
+		with open('airline_information-'+str(i)+'.csv', 'a') as the_file:
+			the_file.write(exportTupsToCSV(airline_tups))
 
-	with open('schedule_information.csv', 'a') as the_file:
-		the_file.write(exportTupsToCSV(flight_tups))
+		with open('schedule_information-'+str(i)+'.csv', 'a') as the_file:
+			the_file.write(exportTupsToCSV(flight_tups))
 
-	with open('pricing_information.csv', 'a') as the_file:
-		the_file.write(exportTupsToCSV(price))
+		with open('pricing_information-'+str(i)+'.csv', 'a') as the_file:
+			the_file.write(exportTupsToCSV(price))
 
-	with open('plane_information.csv', 'a') as the_file:
-		the_file.write(exportTupsToCSV(plane_tups))
+		with open('plane_information-'+str(i)+'.csv', 'a') as the_file:
+			the_file.write(exportTupsToCSV(plane_tups))
 
 
 
