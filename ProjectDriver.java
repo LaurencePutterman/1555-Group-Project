@@ -16,7 +16,7 @@ public class ProjectDriver
 					CustomerTasks customerInterface = new CustomerTasks();
 					break;
 				case '2':
-					AdministratorTasks adminInterface = new AdministratorTasks();
+					AdministratorTasks adminInterface = new AdministratorInterface();
 					break;
 				case 'Q':
 					break;
