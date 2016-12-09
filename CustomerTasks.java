@@ -43,8 +43,8 @@ public class CustomerTasks
     try blocks*/
     //username = "shb64"; //This is your username in oracle
     //password = "3556313"; //This is your password in oracle
-    username = "shb64";
-    password = "3556313";
+    username = "mlp81";
+    password = "3808669";
     try{
       //Register the oracle driver.  This needs the oracle files provided
       //in the oracle.zip file, unzipped into the local directory and 
@@ -80,34 +80,34 @@ public class CustomerTasks
     	switch(option)
     	{
     		case '1':
-    			addCustomer();
+    			addCustomerHelper();
     			break;
     		case '2':
-	    		showCustomerInfo();
+	    		showCustomerInfoHelper();
 	    		break;
     		case '3':
-	    		findPriceForFlightsBetweenTwoCities();
+	    		findPriceForFlightsBetweenTwoCitiesHelper();
 	    		break;
     		case '4':
-	    		findAllRoutesBetweenTwoCities();
+	    		findAllRoutesBetweenTwoCitiesHelper();
 	    		break;
     		case '5':
-	    		findAllRoutesBtwTwoCitiesForAirline();
+	    		findAllRoutesBtwTwoCitiesForAirlineHelper();
 	    		break;
     		case '6':
-	    		findAllRoutesWithSeatsBtwTwoCitiesOnDay();
+	    		findAllRoutesWithSeatsBtwTwoCitiesOnDayHelper();
 	    		break;
     		case '7':
-	    		findAllRoutesWithSeatsBtwTwoCitiesOnDayForAirline();
+	    		findAllRoutesWithSeatsBtwTwoCitiesOnDayForAirlineHelper();
 	    		break;
     		case '8':
 	    		makeReservation();
 	    		break;
     		case '9':
-	    		showReservationInfoGivenNumber();
+	    		showReservationInfoGivenNumberHelper();
 	    		break;
     		case '0':
-	    		buyTicketOnReservation();
+	    		buyTicketOnReservationHelper();
 	    		break;
     		case 'Q':
     			break;
@@ -119,21 +119,54 @@ public class CustomerTasks
 
     System.out.println("Exiting program...");
 }
-private void addCustomer()
-{
-	String query;
-	PreparedStatement preparedStatement;
-	ResultSet rs;
+private void addCustomerHelper(){
 	String first_name;
 	String last_name;
 	String salutation;
-	String credit_car_num;
 	String street;
 	String city;
 	String state;
 	String phone;
 	String email;
+	String credit_card_num;
 	String expirationDateString;
+	boolean result;
+	while(true){
+		System.out.println("Please enter customer's first name.");
+		first_name = keyboard.nextLine();
+		System.out.println("Please enter customer's last name.");
+		last_name = keyboard.nextLine();
+		System.out.println("Please enter customer's salutation.");
+		salutation = keyboard.nextLine();
+		System.out.println("Please enter customer's street address.");
+		street = keyboard.nextLine();
+		System.out.println("Please enter customer's city.");
+		city = keyboard.nextLine();
+		System.out.println("Please enter customer's 2 letter state (e.g, NY).");
+		state = keyboard.nextLine();
+		System.out.println("Please enter customer's phone number.");
+		phone = keyboard.nextLine();
+		System.out.println("Please enter customer's email.");
+		email = keyboard.nextLine();
+		System.out.println("Please enter customer's credit card number.");
+		credit_card_num = keyboard.nextLine();
+		System.out.println("Please enter customer's credit card expiration date.");
+		expirationDateString = keyboard.nextLine();
+		result = addCustomer(first_name,last_name,salutation,street,city,state,phone,email,credit_card_num, expirationDateString);
+		System.out.println("Add another customer?\nY/N");
+		if(keyboard.nextLine().toLowerCase().equals("y")){
+			continue;
+		}else{
+			break;
+		}		
+	}
+	
+}
+public boolean addCustomer(String first_name, String last_name, String salutation, String street, String city, String state, String phone, String email, String credit_card_num, String expirationDateString)
+{
+	String query;
+	PreparedStatement preparedStatement;
+	ResultSet rs;
 	Date credit_card_expire = null;
 	String cid;
 
@@ -143,132 +176,102 @@ private void addCustomer()
 		connection.setAutoCommit(false);
 	}catch(SQLException e){
 		System.out.println("Error: connection to database failed");
-		return;
+		return false;
 	}
 	try{
-		while(true){
-			System.out.println("Please enter customer's first name.");
-			first_name = keyboard.nextLine();
-			System.out.println("Please enter customer's last name.");
-			last_name = keyboard.nextLine();
+		//Check if customer name already exists
+		query = "SELECT * FROM customer WHERE first_name = ? and last_name = ?";
+		preparedStatement = connection.prepareStatement(query);
+		preparedStatement.setString(1,first_name);
+		preparedStatement.setString(2,last_name);
 
-			//Check if customer name already exists
-			query = "SELECT * FROM customer WHERE first_name = ? and last_name = ?";
-			preparedStatement = connection.prepareStatement(query);
-			preparedStatement.setString(1,first_name);
-			preparedStatement.setString(2,last_name);
+		rs = preparedStatement.executeQuery();
 
-			rs = preparedStatement.executeQuery();
-
-			if(rs.next()){
-				//results returned
-				System.out.println("Sorry, a user with those first and last names already exists. Would you like to try another?\n Y/N");
-				if(keyboard.nextLine().toLowerCase().equals("y")){
-					continue;
-				}else{
-					break;
-				}
-			}
-			
-			System.out.println("Please enter customer's salutation.");
-			salutation = keyboard.nextLine();
-			System.out.println("Please enter customer's street address.");
-			street = keyboard.nextLine();
-			System.out.println("Please enter customer's city.");
-			city = keyboard.nextLine();
-			System.out.println("Please enter customer's 2 letter state (e.g, NY).");
-			state = keyboard.nextLine();
-			while(state.length() != 2){
-				System.out.println("State entered was more than 3 letters.");
-				System.out.println("Please enter customer's 2 letter state (e.g, NY).");
-				state = keyboard.nextLine();
-			}
-			System.out.println("Please enter customer's phone number.");
-			phone = keyboard.nextLine();
-			System.out.println("Please enter customer's email.");
-			email = keyboard.nextLine();
-			System.out.println("Please enter customer's credit card number.");
-			credit_car_num = keyboard.nextLine();
-
-			System.out.println("Please enter customer's credit card expiration date.");
-			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM/yy");
-			simpleDateFormat.setLenient(false);
-			expirationDateString = keyboard.nextLine();
-			boolean dateEntered = false;
-			Date currDate = new Date();
-			while(!dateEntered){
-				try{
-					credit_card_expire = simpleDateFormat.parse(expirationDateString);
-					while(credit_card_expire.before(currDate)){
-						System.out.println("Credit card is expired!");
-						System.out.println("Please enter customer's credit card number.");
-						credit_car_num = keyboard.nextLine();
-						System.out.println("Please enter customer's credit card expiration date.");
-						expirationDateString = keyboard.nextLine();
-						credit_card_expire = simpleDateFormat.parse(expirationDateString);
-					}
-					dateEntered = true;
-				} catch(java.text.ParseException pe){
-					System.out.println("Enter date of format MM/yy");
-					expirationDateString = keyboard.nextLine();
-				}
-			}
-			
-			
-
-			//Select max CID, increment by 1
-			query = "SELECT max(cid) m_cid FROM customer";
-			preparedStatement = connection.prepareStatement(query);
-
-			rs = preparedStatement.executeQuery();
-
-			if(!rs.next()){
-				cid = "1";
-			}
-			else if(rs.getString(1) == null){
-				cid = "1";
-			}
-			else{
-				String currMax = rs.getString(1);
-				cid = String.valueOf((Integer.parseInt(currMax)+1));
-			}
-
-			//Insert customer information
-			query =  "INSERT INTO "
-			+"customer (cid,salutation,first_name,last_name,credit_car_num,credit_card_expire,street,city,state,phone,email) "
-			+"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-			preparedStatement = connection.prepareStatement(query);
-			preparedStatement.setString(1,cid);
-			preparedStatement.setString(2,salutation);
-			preparedStatement.setString(3,first_name);
-			preparedStatement.setString(4,last_name);
-			preparedStatement.setString(5,credit_car_num);
-			if(credit_card_expire != null){
-				preparedStatement.setDate(6,new java.sql.Date(credit_card_expire.getTime()));
-			} else{
-				System.out.println("CC expiration is not set!");
-				break;
-			}
-			
-			preparedStatement.setString(7,street);
-			preparedStatement.setString(8,city);
-			preparedStatement.setString(9,state);
-			preparedStatement.setString(10,phone);
-			preparedStatement.setString(11,email);
-
-			preparedStatement.executeUpdate();
-
-			System.out.println("Customer succesfully inserted with PittRewards number of "+cid+".");
-			System.out.println("Add another customer?\nY/N");
-			if(keyboard.nextLine().toLowerCase().equals("y")){
-				continue;
-			}else{
-				break;
-			}		
+		if(rs.next()){
+			//results returned
+			System.out.println("Sorry, a user with those first and last names already exists.");
+			return false;
 		}
+		
+		while(state.length() != 2){
+			System.out.println("State entered was more than 3 letters.");
+			System.out.println("Please enter customer's 2 letter state (e.g, NY).");
+			return false;
+		}
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM/yy");
+		simpleDateFormat.setLenient(false);
+		
+		boolean dateEntered = false;
+		Date currDate = new Date();
+		while(!dateEntered){
+			try{
+				credit_card_expire = simpleDateFormat.parse(expirationDateString);
+				if(credit_card_expire.before(currDate)){
+					System.out.println("Credit card is expired!");
+					// System.out.println("Please enter customer's credit card number.");
+					// credit_car_num = keyboard.nextLine();
+					// System.out.println("Please enter customer's credit card expiration date.");
+					// expirationDateString = keyboard.nextLine();
+					// credit_card_expire = simpleDateFormat.parse(expirationDateString);
+					return false;
+				}
+				dateEntered = true;
+			} catch(java.text.ParseException pe){
+				System.out.println("Enter date of format MM/yy");
+				// expirationDateString = keyboard.nextLine();
+				return false;
+			}
+		}
+		
+		
+
+		//Select max CID, increment by 1
+		query = "SELECT max(to_number(cid)) m_cid FROM customer";
+		preparedStatement = connection.prepareStatement(query);
+
+		rs = preparedStatement.executeQuery();
+
+		if(!rs.next()){
+			cid = "1";
+		}
+		else if(rs.getString(1) == null){
+			cid = "1";
+		}
+		else{
+			String currMax = rs.getString(1);
+			cid = String.valueOf((Integer.parseInt(currMax)+1));
+		}
+
+		//Insert customer information
+		query =  "INSERT INTO "
+		+"customer (cid,salutation,first_name,last_name,credit_car_num,credit_card_expire,street,city,state,phone,email) "
+		+"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+		preparedStatement = connection.prepareStatement(query);
+		preparedStatement.setString(1,cid);
+		preparedStatement.setString(2,salutation);
+		preparedStatement.setString(3,first_name);
+		preparedStatement.setString(4,last_name);
+		preparedStatement.setString(5,credit_card_num);
+		if(credit_card_expire != null){
+			preparedStatement.setDate(6,new java.sql.Date(credit_card_expire.getTime()));
+		} else{
+			System.out.println("CC expiration is not set!");
+			return false;
+		}
+		
+		preparedStatement.setString(7,street);
+		preparedStatement.setString(8,city);
+		preparedStatement.setString(9,state);
+		preparedStatement.setString(10,phone);
+		preparedStatement.setString(11,email);
+
+		preparedStatement.executeUpdate();
+
+		System.out.println("Customer succesfully inserted with PittRewards number of "+cid+".");
 		connection.commit();
 		connection.setAutoCommit(true);
+		return true;
 	}catch(SQLException e){
 		System.out.println("Unhandled SQLException: ");
 		System.out.println(e.getMessage());
@@ -277,405 +280,412 @@ private void addCustomer()
 		}catch(SQLException se){
 
 		}
+		return false;
 		
 	}
+}
+private void showCustomerInfoHelper(){
+	String first_name;
+	String last_name;
+	boolean result;
+	while(true){
+		System.out.println("Please enter customer's first name.");
+		first_name = keyboard.nextLine();
+		System.out.println("Please enter customer's last name.");
+		last_name = keyboard.nextLine();
+		result = showCustomerInfo(first_name,last_name);
+		System.out.println("\nWould you like to try another?\n Y/N");
+		if(keyboard.nextLine().toLowerCase().equals("y")){
+			continue;
+		}else{
+			break;
+		}
+
+	}
+
 }  
-private void showCustomerInfo()
+public boolean showCustomerInfo(String first_name, String last_name)
 {
 	String query = "SELECT * FROM customer WHERE first_name = ? and last_name = ?";
 	PreparedStatement preparedStatement;
 	ResultSet rs;
-	String first_name;
-	String last_name;
 
 	try{
-		while(true){
-			System.out.println("Please enter customer's first name.");
-			first_name = keyboard.nextLine();
-			System.out.println("Please enter customer's last name.");
-			last_name = keyboard.nextLine();
+		preparedStatement = connection.prepareStatement(query);
+		preparedStatement.setString(1,first_name);
+		preparedStatement.setString(2,last_name);
 
-			preparedStatement = connection.prepareStatement(query);
-			preparedStatement.setString(1,first_name);
-			preparedStatement.setString(2,last_name);
+		rs = preparedStatement.executeQuery();
 
-			rs = preparedStatement.executeQuery();
-
-			if(rs.next()){
-				//results returned
-				System.out.println("\nName: "+rs.getString(2)+". "+rs.getString(3)+" "+rs.getString(4));
-				System.out.println("PittRewards Number: "+rs.getString(1));
-				System.out.println("Address: "+rs.getString(7)+" "+rs.getString(8)+" "+rs.getString(9));
-				System.out.println("Phone Number: "+rs.getString(10));
-				System.out.println("Email: "+rs.getString(11));
-				System.out.println("Credit Card Number: "+rs.getString(5));
-				System.out.println("Credit Card Expiration: "+rs.getDate(6));
-				if(rs.getString(12) != null){
-					System.out.println("Frequent Flier Number: "+rs.getString(12));
-				}
-				System.out.println("\nWould you like to try another?\n Y/N");
-				if(keyboard.nextLine().toLowerCase().equals("y")){
-					continue;
-				}else{
-					break;
-				}
+		if(rs.next()){
+			//results returned
+			System.out.println("\nName: "+rs.getString(2)+". "+rs.getString(3)+" "+rs.getString(4));
+			System.out.println("PittRewards Number: "+rs.getString(1));
+			System.out.println("Address: "+rs.getString(7)+" "+rs.getString(8)+" "+rs.getString(9));
+			System.out.println("Phone Number: "+rs.getString(10));
+			System.out.println("Email: "+rs.getString(11));
+			System.out.println("Credit Card Number: "+rs.getString(5));
+			System.out.println("Credit Card Expiration: "+rs.getDate(6));
+			if(rs.getString(12) != null){
+				System.out.println("Frequent Flier Number: "+rs.getString(12));
 			}
-			else{
-				System.out.println("Sorry, no user with that name exists");
-				System.out.println("Would you like to try another?\n Y/N");
-				if(keyboard.nextLine().toLowerCase().equals("y")){
-					continue;
-				}else{
-					break;
-				}
-			}
+			return true;
+		}
+		else{
+			System.out.println("Sorry, no user with that name exists");
+			return false;
 		}
 	}catch(SQLException e){
 		System.out.println("Unhandled SQLException: ");
 		System.out.println(e.getMessage());
+		return false;
 	}
 }
-private void findPriceForFlightsBetweenTwoCities()
+private void findPriceForFlightsBetweenTwoCitiesHelper(){
+	String city_a;
+	String city_b;
+	boolean result;
+	while(true){
+		System.out.println("Please enter first city");
+		city_a = keyboard.nextLine();
+		System.out.println("Please enter second city");
+		city_b = keyboard.nextLine();
+		result = findPriceForFlightsBetweenTwoCities(city_a,city_b);
+		System.out.println("\nWould you like to try another?\n Y/N");
+		if(keyboard.nextLine().toLowerCase().equals("y")){
+			continue;
+		}else{
+			break;
+		}
+	}
+}
+public boolean findPriceForFlightsBetweenTwoCities(String city_a, String city_b)
 {
 	String query;
 	PreparedStatement preparedStatement;
 	ResultSet rs1;
 	ResultSet rs2;
-	String city_a;
-	String city_b;
 
-	try{
-		while(true){
-			System.out.println("Please enter first city");
-			city_a = keyboard.nextLine();
-			System.out.println("Please enter second city");
-			city_b = keyboard.nextLine();
+	try{	
+		query = "SELECT high_price,low_price FROM price WHERE departure_city = ? and arrival_city = ?";
 
-			query = "SELECT high_price,low_price FROM price WHERE departure_city = ? and arrival_city = ?";
+		preparedStatement = connection.prepareStatement(query);
+		preparedStatement.setString(1,city_a);
+		preparedStatement.setString(2,city_b);
+		rs1 = preparedStatement.executeQuery();
 
-			preparedStatement = connection.prepareStatement(query);
-			preparedStatement.setString(1,city_a);
-			preparedStatement.setString(2,city_b);
-			rs1 = preparedStatement.executeQuery();
+		preparedStatement = connection.prepareStatement(query);
+		preparedStatement.setString(1,city_b);
+		preparedStatement.setString(2,city_a);
+		rs2 = preparedStatement.executeQuery();
 
-			preparedStatement = connection.prepareStatement(query);
-			preparedStatement.setString(1,city_b);
-			preparedStatement.setString(2,city_a);
-			rs2 = preparedStatement.executeQuery();
+		if(rs1.next() && rs2.next()){
+			System.out.println("\nPrices from "+city_a+" to "+city_b);
+			System.out.println("High Price: "+rs1.getInt(1));
+			System.out.println("Low Price: "+rs1.getInt(2));
 
-			if(rs1.next() && rs2.next()){
-				System.out.println("\nPrices from "+city_a+" to "+city_b);
-				System.out.println("High Price: "+rs1.getInt(1));
-				System.out.println("Low Price: "+rs1.getInt(2));
+			System.out.println("\nPrices from "+city_b+" to "+city_a);
+			System.out.println("High Price: "+rs2.getInt(1));
+			System.out.println("Low Price: "+rs2.getInt(2));
 
-				System.out.println("\nPrices from "+city_b+" to "+city_a);
-				System.out.println("High Price: "+rs2.getInt(1));
-				System.out.println("Low Price: "+rs2.getInt(2));
+			System.out.println("\nRound Trip prices from "+city_a+" to "+city_b);
+			System.out.println("High Price: "+(rs1.getInt(1)+rs2.getInt(1)));
+			System.out.println("Low Price: "+(rs1.getInt(2)+rs2.getInt(2)));
 
-				System.out.println("\nRound Trip prices from "+city_a+" to "+city_b);
-				System.out.println("High Price: "+(rs1.getInt(1)+rs2.getInt(1)));
-				System.out.println("Low Price: "+(rs1.getInt(2)+rs2.getInt(2)));
-
-				System.out.println("\nWould you like to try another?\n Y/N");
-				if(keyboard.nextLine().toLowerCase().equals("y")){
-					continue;
-				}else{
-					break;
-				}
-			}
-			else{
-				System.out.println("Sorry, no price data for this route is available.");
-				System.out.println("Would you like to try another?\n Y/N");
-				if(keyboard.nextLine().toLowerCase().equals("y")){
-					continue;
-				}else{
-					break;
-				}
-			}
+			return true;
+		}
+		else{
+			System.out.println("Sorry, no price data for this route is available.");
+			return false;
 		}
 	}catch(SQLException e){
 		System.out.println("Unhandled SQLException: ");
 		System.out.println(e.getMessage());
+		return false;
 	}
 }
-private void findAllRoutesBetweenTwoCities()
+private void findAllRoutesBetweenTwoCitiesHelper(){
+	String city_a;
+	String city_b;
+	boolean result;
+	while(true){
+		System.out.println("Please enter first city");
+		city_a = keyboard.nextLine();
+		System.out.println("Please enter second city");
+		city_b = keyboard.nextLine();
+		result = findAllRoutesBetweenTwoCities(city_a,city_b);
+		System.out.println("\nWould you like to try another?\n Y/N");
+		if(keyboard.nextLine().toLowerCase().equals("y")){
+			continue;
+		}else{
+			break;
+		}
+
+	}
+}
+public boolean findAllRoutesBetweenTwoCities(String city_a, String city_b)
 {
 	String query;
 	PreparedStatement preparedStatement;
 	ResultSet rs1;
 	ResultSet rs2;
-	String city_a;
-	String city_b;
-
+	boolean ret = false;
 	try{
-		while(true){
-			System.out.println("Please enter first city");
-			city_a = keyboard.nextLine();
-			System.out.println("Please enter second city");
-			city_b = keyboard.nextLine();
+		query = "SELECT f.flight_number, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time FROM flight f WHERE f.departure_city = ? and f.arrival_city = ?";
 
-			query = "SELECT f.flight_number, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time FROM flight f WHERE f.departure_city = ? and f.arrival_city = ?";
+		preparedStatement = connection.prepareStatement(query);
+		preparedStatement.setString(1,city_a);
+		preparedStatement.setString(2,city_b);
+		rs1 = preparedStatement.executeQuery();
 
-			preparedStatement = connection.prepareStatement(query);
-			preparedStatement.setString(1,city_a);
-			preparedStatement.setString(2,city_b);
-			rs1 = preparedStatement.executeQuery();
+		preparedStatement = connection.prepareStatement(query);
+		preparedStatement.setString(1,city_b);
+		preparedStatement.setString(2,city_a);
+		rs2 = preparedStatement.executeQuery();
 
-			preparedStatement = connection.prepareStatement(query);
-			preparedStatement.setString(1,city_b);
-			preparedStatement.setString(2,city_a);
-			rs2 = preparedStatement.executeQuery();
-
-			boolean firstStatement = rs1.next();
-			boolean secondStatement = rs2.next();
-			System.out.println("\n**RESULTS**");
-			if(firstStatement || secondStatement){
-				System.out.println("\nDirect trips:");
-				while(firstStatement && !rs1.isAfterLast()){
-					System.out.println("\nFlight Number: "+rs1.getString(1));
-					System.out.println("Departure City: "+rs1.getString(2));
-					System.out.println("Arrival City: "+rs1.getString(3));
-					System.out.println("Departure Time: "+rs1.getString(4));
-					System.out.println("Arrival Time: "+rs1.getString(5));		
-					
-					rs1.next();
-				}
-
-				while(secondStatement && !rs2.isAfterLast()){
-					System.out.println("\nFlight Number: "+rs2.getString(1));
-					System.out.println("Departure City: "+rs2.getString(2));
-					System.out.println("Arrival City: "+rs2.getString(3));
-					System.out.println("Departure Time: "+rs2.getString(4));
-					System.out.println("Arrival Time: "+rs2.getString(5));
-					rs2.next();
-				}
+		boolean firstStatement = rs1.next();
+		boolean secondStatement = rs2.next();
+		System.out.println("\n**RESULTS**");
+		if(firstStatement || secondStatement){
+			System.out.println("\nDirect trips:");
+			while(firstStatement && !rs1.isAfterLast()){
+				System.out.println("\nFlight Number: "+rs1.getString(1));
+				System.out.println("Departure City: "+rs1.getString(2));
+				System.out.println("Arrival City: "+rs1.getString(3));
+				System.out.println("Departure Time: "+rs1.getString(4));
+				System.out.println("Arrival Time: "+rs1.getString(5));		
 				
-			}
-			else{
-				System.out.println("Sorry, no direct routes are available.");
+				rs1.next();
 			}
 
+			while(secondStatement && !rs2.isAfterLast()){
+				System.out.println("\nFlight Number: "+rs2.getString(1));
+				System.out.println("Departure City: "+rs2.getString(2));
+				System.out.println("Arrival City: "+rs2.getString(3));
+				System.out.println("Departure Time: "+rs2.getString(4));
+				System.out.println("Arrival Time: "+rs2.getString(5));
+				rs2.next();
+			}
+			ret = true;
+		}
+		else{
+			System.out.println("Sorry, no direct routes are available.");
+		}
 
-			query = "SELECT f.flight_number, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, f.weekly_schedule FROM flight f WHERE f.departure_city = ?";
 
+		query = "SELECT f.flight_number, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, f.weekly_schedule FROM flight f WHERE f.departure_city = ?";
+
+		preparedStatement = connection.prepareStatement(query);
+		preparedStatement.setString(1,city_a);
+		rs1 = preparedStatement.executeQuery();
+		boolean hasConnection = false;
+		boolean firstConnection = false;
+		while(rs1.next()){
+			query = "SELECT f.flight_number, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, f.weekly_schedule FROM flight f WHERE f.departure_city = ? and f.arrival_city = ?";
 			preparedStatement = connection.prepareStatement(query);
-			preparedStatement.setString(1,city_a);
-			rs1 = preparedStatement.executeQuery();
-			boolean hasConnection = false;
-			boolean firstConnection = false;
-			while(rs1.next()){
-				query = "SELECT f.flight_number, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, f.weekly_schedule FROM flight f WHERE f.departure_city = ? and f.arrival_city = ?";
-				preparedStatement = connection.prepareStatement(query);
-				preparedStatement.setString(1,rs1.getString(3));
-				preparedStatement.setString(2,city_b);
-				rs2 = preparedStatement.executeQuery();
-				hasConnection = rs2.next();
-				if(hasConnection){
-					int firstFlightArrival = Integer.parseInt(rs1.getString(5));
-					int secondFlightDeparture = Integer.parseInt(rs2.getString(4));
-					while(hasConnection  && !rs2.isAfterLast()){
-						boolean hasSameDay = false;
-						for(int i =0; i< rs1.getString(6).length(); i++){
-							if(rs1.getString(6).charAt(i) == rs2.getString(6).charAt(i)){
-								hasSameDay = true;
-								break;
-							}
+			preparedStatement.setString(1,rs1.getString(3));
+			preparedStatement.setString(2,city_b);
+			rs2 = preparedStatement.executeQuery();
+			hasConnection = rs2.next();
+			if(hasConnection){
+				int firstFlightArrival = Integer.parseInt(rs1.getString(5));
+				int secondFlightDeparture = Integer.parseInt(rs2.getString(4));
+				while(hasConnection  && !rs2.isAfterLast()){
+					boolean hasSameDay = false;
+					for(int i =0; i< rs1.getString(6).length(); i++){
+						if(rs1.getString(6).charAt(i) == rs2.getString(6).charAt(i)){
+							hasSameDay = true;
+							break;
 						}
-						if(hasSameDay && Math.abs(secondFlightDeparture - firstFlightArrival) >= 100 ){
-							if(!firstConnection){
-								firstConnection = true;
-								System.out.println("\nConnection trips:");
-							}
-							System.out.println("\nFlight 1:");
-							System.out.println("Flight Number: "+rs1.getString(1));
-							System.out.println("Departure City: "+rs1.getString(2));
-							System.out.println("Arrival City: "+rs1.getString(3));
-							System.out.println("Departure Time: "+rs1.getString(4));
-							System.out.println("Arrival Time: "+rs1.getString(5));
-
-							System.out.println("\nFlight 2:");
-							System.out.println("Flight Number: "+rs2.getString(1));
-							System.out.println("Departure City: "+rs2.getString(2));
-							System.out.println("Arrival City: "+rs2.getString(3));
-							System.out.println("Departure Time: "+rs2.getString(4));
-							System.out.println("Arrival Time: "+rs2.getString(5));
-							System.out.println();
-
-						}
-						hasConnection = rs2.next();		
 					}
+					if(hasSameDay && Math.abs(secondFlightDeparture - firstFlightArrival) >= 100 ){
+						if(!firstConnection){
+							firstConnection = true;
+							System.out.println("\nConnection trips:");
+						}
+						System.out.println("\nFlight 1:");
+						System.out.println("Flight Number: "+rs1.getString(1));
+						System.out.println("Departure City: "+rs1.getString(2));
+						System.out.println("Arrival City: "+rs1.getString(3));
+						System.out.println("Departure Time: "+rs1.getString(4));
+						System.out.println("Arrival Time: "+rs1.getString(5));
+
+						System.out.println("\nFlight 2:");
+						System.out.println("Flight Number: "+rs2.getString(1));
+						System.out.println("Departure City: "+rs2.getString(2));
+						System.out.println("Arrival City: "+rs2.getString(3));
+						System.out.println("Departure Time: "+rs2.getString(4));
+						System.out.println("Arrival Time: "+rs2.getString(5));
+						System.out.println();
+						ret = true;
+
+					}
+					hasConnection = rs2.next();		
 				}
-				
 			}
-			if(!firstConnection){
-				System.out.println("Sorry, no connecting trips available");
-			}
-
-
-			System.out.println("\nWould you like to try another?\n Y/N");
-			if(keyboard.nextLine().toLowerCase().equals("y")){
-				continue;
-			}else{
-				break;
-			}
+			
+		}
+		if(!firstConnection){
+			System.out.println("Sorry, no connecting trips available");
 		}
 	}catch(SQLException e){
 		System.out.println("Unhandled SQLException: ");
 		//System.out.println(e.getMessage());
 		e.printStackTrace();
+		return false;
 	}
+	return ret;
 }
-private void findAllRoutesBtwTwoCitiesForAirline()
-{
-	String query;
-	PreparedStatement preparedStatement;
-	ResultSet rs1;
-	ResultSet rs2;
+private void findAllRoutesBtwTwoCitiesForAirlineHelper(){
 	String city_a;
 	String city_b;
 	String airline_name;
-
-	try{
-		while(true){
-			System.out.println("Please enter first city");
-			city_a = keyboard.nextLine();
-			System.out.println("Please enter second city");
-			city_b = keyboard.nextLine();
-			System.out.println("Please enter an airline");
-			airline_name = keyboard.nextLine();
-
-			query = "SELECT f.flight_number, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, a.airline_id FROM flight f INNER JOIN Airline a on f.airline_id = a.airline_id WHERE f.departure_city = ? and f.arrival_city = ? and a.airline_name = ?";
-
-			preparedStatement = connection.prepareStatement(query);
-			preparedStatement.setString(1,city_a);
-			preparedStatement.setString(2,city_b);
-			preparedStatement.setString(3,airline_name);
-			rs1 = preparedStatement.executeQuery();
-
-			preparedStatement = connection.prepareStatement(query);
-			preparedStatement.setString(1,city_b);
-			preparedStatement.setString(2,city_a);
-			preparedStatement.setString(3,airline_name);
-			rs2 = preparedStatement.executeQuery();
-
-			boolean firstStatement = rs1.next();
-			boolean secondStatement = rs2.next();
-			System.out.println("\n**RESULTS**");
-			if(firstStatement || secondStatement){
-				System.out.println("\nDirect trips:");
-				while(firstStatement && !rs1.isAfterLast()){
-					System.out.println("\nAirline ID: "+rs1.getString(6));
-					System.out.println("Flight Number: "+rs1.getString(1));
-					System.out.println("Departure City: "+rs1.getString(2));
-					System.out.println("Arrival City: "+rs1.getString(3));
-					System.out.println("Departure Time: "+rs1.getString(4));
-					System.out.println("Arrival Time: "+rs1.getString(5));		
-					
-					rs1.next();
-				}
-
-				while(secondStatement && !rs2.isAfterLast()){
-					System.out.println("\nAirline ID: "+rs2.getString(6));
-					System.out.println("Flight Number: "+rs2.getString(1));
-					System.out.println("Departure City: "+rs2.getString(2));
-					System.out.println("Arrival City: "+rs2.getString(3));
-					System.out.println("Departure Time: "+rs2.getString(4));
-					System.out.println("Arrival Time: "+rs2.getString(5));
-					rs2.next();
-				}
-				
-			}
-			else{
-				System.out.println("Sorry, no direct routes are available.");
-			}
-
-
-			query = "SELECT f.flight_number, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, f.weekly_schedule, a.airline_id FROM flight f INNER JOIN Airline a on f.airline_id = a.airline_id WHERE f.departure_city = ? and a.airline_name = ?";
-
-			preparedStatement = connection.prepareStatement(query);
-			preparedStatement.setString(1,city_a);
-			preparedStatement.setString(2,airline_name);
-			rs1 = preparedStatement.executeQuery();
-			boolean hasConnection = false;
-			boolean firstConnection = false;
-			while(rs1.next()){
-				query = "SELECT f.flight_number, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, f.weekly_schedule, a.airline_id FROM flight f INNER JOIN Airline a on f.airline_id = a.airline_id WHERE f.departure_city = ? and f.arrival_city = ? and a.airline_name = ?";
-				preparedStatement = connection.prepareStatement(query);
-				preparedStatement.setString(1,rs1.getString(3));
-				preparedStatement.setString(2,city_b);
-				preparedStatement.setString(3,airline_name);
-				rs2 = preparedStatement.executeQuery();
-				hasConnection = rs2.next();
-				if(hasConnection){
-					int firstFlightArrival = Integer.parseInt(rs1.getString(5));
-					int secondFlightDeparture = Integer.parseInt(rs2.getString(4));
-					while(hasConnection  && !rs2.isAfterLast()){
-						boolean hasSameDay = false;
-						for(int i =0; i< rs1.getString(6).length(); i++){
-							if(rs1.getString(6).charAt(i) == rs2.getString(6).charAt(i)){
-								hasSameDay = true;
-								break;
-							}
-						}
-						if(hasSameDay && (secondFlightDeparture - firstFlightArrival) >= 100 ){
-							if(!firstConnection){
-								firstConnection = true;
-								System.out.println("\nConnection trips:");
-							}
-							System.out.println("\nFlight 1:");
-							System.out.println("\nAirline ID: "+rs1.getString(7));
-							System.out.println("Flight Number: "+rs1.getString(1));
-							System.out.println("Departure City: "+rs1.getString(2));
-							System.out.println("Arrival City: "+rs1.getString(3));
-							System.out.println("Departure Time: "+rs1.getString(4));
-							System.out.println("Arrival Time: "+rs1.getString(5));
-
-							System.out.println("\nFlight 2:");
-							System.out.println("\nAirline ID: "+rs2.getString(7));
-							System.out.println("Flight Number: "+rs2.getString(1));
-							System.out.println("Departure City: "+rs2.getString(2));
-							System.out.println("Arrival City: "+rs2.getString(3));
-							System.out.println("Departure Time: "+rs2.getString(4));
-							System.out.println("Arrival Time: "+rs2.getString(5));
-							System.out.println("------------------------");
-
-						}
-						hasConnection = rs2.next();		
-					}
-				}
-				
-			}
-			if(!firstConnection){
-				System.out.println("Sorry, no connecting trips available");
-			}
-
-
-			System.out.println("\nWould you like to try another?\n Y/N");
-			if(keyboard.nextLine().toLowerCase().equals("y")){
-				continue;
-			}else{
-				break;
-			}
+	boolean result;
+	while(true){
+		System.out.println("Please enter first city");
+		city_a = keyboard.nextLine();
+		System.out.println("Please enter second city");
+		city_b = keyboard.nextLine();
+		System.out.println("Please enter an airline");
+		airline_name = keyboard.nextLine();
+		result = findAllRoutesBtwTwoCitiesForAirline(city_a,city_b,airline_name);
+		System.out.println("\nWould you like to try another?\n Y/N");
+		if(keyboard.nextLine().toLowerCase().equals("y")){
+			continue;
+		}else{
+			break;
 		}
-	}catch(SQLException e){
-		System.out.println("Unhandled SQLException: ");
-		//System.out.println(e.getMessage());
-		e.printStackTrace();
+
 	}
 }
-private void findAllRoutesWithSeatsBtwTwoCitiesOnDay()
+public boolean findAllRoutesBtwTwoCitiesForAirline(String city_a, String city_b, String airline_name)
 {
 	String query;
 	PreparedStatement preparedStatement;
 	ResultSet rs1;
 	ResultSet rs2;
+	boolean ret = false;
+	try{	
+		query = "SELECT f.flight_number, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, a.airline_id FROM flight f INNER JOIN Airline a on f.airline_id = a.airline_id WHERE f.departure_city = ? and f.arrival_city = ? and a.airline_name = ?";
+
+		preparedStatement = connection.prepareStatement(query);
+		preparedStatement.setString(1,city_a);
+		preparedStatement.setString(2,city_b);
+		preparedStatement.setString(3,airline_name);
+		rs1 = preparedStatement.executeQuery();
+
+		preparedStatement = connection.prepareStatement(query);
+		preparedStatement.setString(1,city_b);
+		preparedStatement.setString(2,city_a);
+		preparedStatement.setString(3,airline_name);
+		rs2 = preparedStatement.executeQuery();
+
+		boolean firstStatement = rs1.next();
+		boolean secondStatement = rs2.next();
+		System.out.println("\n**RESULTS**");
+		if(firstStatement || secondStatement){
+			System.out.println("\nDirect trips:");
+			while(firstStatement && !rs1.isAfterLast()){
+				System.out.println("\nAirline ID: "+rs1.getString(6));
+				System.out.println("Flight Number: "+rs1.getString(1));
+				System.out.println("Departure City: "+rs1.getString(2));
+				System.out.println("Arrival City: "+rs1.getString(3));
+				System.out.println("Departure Time: "+rs1.getString(4));
+				System.out.println("Arrival Time: "+rs1.getString(5));		
+				
+				rs1.next();
+			}
+
+			while(secondStatement && !rs2.isAfterLast()){
+				System.out.println("\nAirline ID: "+rs2.getString(6));
+				System.out.println("Flight Number: "+rs2.getString(1));
+				System.out.println("Departure City: "+rs2.getString(2));
+				System.out.println("Arrival City: "+rs2.getString(3));
+				System.out.println("Departure Time: "+rs2.getString(4));
+				System.out.println("Arrival Time: "+rs2.getString(5));
+				rs2.next();
+			}
+			ret = true;
+		}
+		else{
+			System.out.println("Sorry, no direct routes are available.");
+		}
+
+
+		query = "SELECT f.flight_number, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, f.weekly_schedule, a.airline_id FROM flight f INNER JOIN Airline a on f.airline_id = a.airline_id WHERE f.departure_city = ? and a.airline_name = ?";
+
+		preparedStatement = connection.prepareStatement(query);
+		preparedStatement.setString(1,city_a);
+		preparedStatement.setString(2,airline_name);
+		rs1 = preparedStatement.executeQuery();
+		boolean hasConnection = false;
+		boolean firstConnection = false;
+		while(rs1.next()){
+			query = "SELECT f.flight_number, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, f.weekly_schedule, a.airline_id FROM flight f INNER JOIN Airline a on f.airline_id = a.airline_id WHERE f.departure_city = ? and f.arrival_city = ? and a.airline_name = ?";
+			preparedStatement = connection.prepareStatement(query);
+			preparedStatement.setString(1,rs1.getString(3));
+			preparedStatement.setString(2,city_b);
+			preparedStatement.setString(3,airline_name);
+			rs2 = preparedStatement.executeQuery();
+			hasConnection = rs2.next();
+			if(hasConnection){
+				int firstFlightArrival = Integer.parseInt(rs1.getString(5));
+				int secondFlightDeparture = Integer.parseInt(rs2.getString(4));
+				while(hasConnection  && !rs2.isAfterLast()){
+					boolean hasSameDay = false;
+					for(int i =0; i< rs1.getString(6).length(); i++){
+						if(rs1.getString(6).charAt(i) == rs2.getString(6).charAt(i)){
+							hasSameDay = true;
+							break;
+						}
+					}
+					if(hasSameDay && (secondFlightDeparture - firstFlightArrival) >= 100 ){
+						if(!firstConnection){
+							firstConnection = true;
+							System.out.println("\nConnection trips:");
+						}
+						System.out.println("\nFlight 1:");
+						System.out.println("\nAirline ID: "+rs1.getString(7));
+						System.out.println("Flight Number: "+rs1.getString(1));
+						System.out.println("Departure City: "+rs1.getString(2));
+						System.out.println("Arrival City: "+rs1.getString(3));
+						System.out.println("Departure Time: "+rs1.getString(4));
+						System.out.println("Arrival Time: "+rs1.getString(5));
+
+						System.out.println("\nFlight 2:");
+						System.out.println("\nAirline ID: "+rs2.getString(7));
+						System.out.println("Flight Number: "+rs2.getString(1));
+						System.out.println("Departure City: "+rs2.getString(2));
+						System.out.println("Arrival City: "+rs2.getString(3));
+						System.out.println("Departure Time: "+rs2.getString(4));
+						System.out.println("Arrival Time: "+rs2.getString(5));
+						System.out.println("------------------------");
+						ret = true;
+					}
+					hasConnection = rs2.next();		
+				}
+			}
+			
+		}
+		if(!firstConnection){
+			System.out.println("Sorry, no connecting trips available");
+		}
+	
+	}catch(SQLException e){
+		System.out.println("Unhandled SQLException: ");
+		//System.out.println(e.getMessage());
+		e.printStackTrace();
+		return false;
+	}
+	return ret;
+}
+private void findAllRoutesWithSeatsBtwTwoCitiesOnDayHelper(){
 	String city_a;
 	String city_b;
 	Date flight_date = null;
+	boolean result;
 	SimpleDateFormat df = new SimpleDateFormat("MM/dd/yyyy");
-
-	try{
-		while(true){
+	while(true){
 			System.out.println("Please enter first city");
 			city_a = keyboard.nextLine();
 			System.out.println("Please enter second city");
@@ -690,6 +700,23 @@ private void findAllRoutesWithSeatsBtwTwoCitiesOnDay()
 					System.out.println("Error parsing date.");
 				}
 			}
+			result = findAllRoutesWithSeatsBtwTwoCitiesOnDay(city_a,city_b,flight_date);
+			System.out.println("\nWould you like to try another?\n Y/N");
+			if(keyboard.nextLine().toLowerCase().equals("y")){
+				continue;
+			}else{
+				break;
+			}
+	}
+}
+public boolean findAllRoutesWithSeatsBtwTwoCitiesOnDay(String city_a, String city_b, Date flight_date)
+{
+	String query;
+	PreparedStatement preparedStatement;
+	ResultSet rs1;
+	ResultSet rs2;
+	boolean ret = false;
+	try{
 			
 			//Direct flight queries
 			query = "SELECT f.flight_number, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, f.weekly_schedule FROM flight f inner join (select count(reservation_number) c_res, flight_number, flight_date from reservation_detail group by flight_number,flight_date) rd on f.flight_number = rd.flight_number inner join Plane p on f.plane_type = p.plane_type WHERE f.departure_city = ? and f.arrival_city = ? and rd.flight_date = ? and c_res <> p.plane_capacity";
@@ -701,7 +728,7 @@ private void findAllRoutesWithSeatsBtwTwoCitiesOnDay()
 				preparedStatement.setDate(3,new java.sql.Date(flight_date.getTime()));
 			} else{
 				System.out.println("Flight date is not set!");
-				break;
+				return false;
 			}
 			rs1 = preparedStatement.executeQuery();
 
@@ -712,7 +739,7 @@ private void findAllRoutesWithSeatsBtwTwoCitiesOnDay()
 				preparedStatement.setDate(3,new java.sql.Date(flight_date.getTime()));
 			} else{
 				System.out.println("Flight date is not set!");
-				break;
+				return false;
 			}
 			rs2 = preparedStatement.executeQuery();
 
@@ -739,6 +766,7 @@ private void findAllRoutesWithSeatsBtwTwoCitiesOnDay()
 					System.out.println("Arrival Time: "+rs2.getString(5));
 					rs2.next();
 				}
+				ret = true;
 				
 			}
 			else{
@@ -756,7 +784,7 @@ private void findAllRoutesWithSeatsBtwTwoCitiesOnDay()
 				preparedStatement.setDate(2,new java.sql.Date(flight_date.getTime()));
 			} else{
 				System.out.println("Flight date is not set!");
-				break;
+				return false;
 			}
 			rs1 = preparedStatement.executeQuery();
 			boolean hasConnection = false;
@@ -770,7 +798,7 @@ private void findAllRoutesWithSeatsBtwTwoCitiesOnDay()
 					preparedStatement.setDate(3,new java.sql.Date(flight_date.getTime()));
 				} else{
 					System.out.println("Flight date is not set!");
-					break;
+					return false;
 				}
 				rs2 = preparedStatement.executeQuery();
 				hasConnection = rs2.next();
@@ -809,289 +837,311 @@ private void findAllRoutesWithSeatsBtwTwoCitiesOnDay()
 						hasConnection = rs2.next();		
 					}
 				}
+				ret = true;
 				
 			}
 			if(!firstConnection){
 				System.out.println("Sorry, no connecting trips available");
 			}
-
-
-			System.out.println("\nWould you like to try another?\n Y/N");
-			if(keyboard.nextLine().toLowerCase().equals("y")){
-				continue;
-			}else{
-				break;
-			}
-		}
 	}catch(SQLException e){
 		System.out.println("Unhandled SQLException: ");
 		//System.out.println(e.getMessage());
 		e.printStackTrace();
+		return false;
 	}
+	return ret;
 }
-private void findAllRoutesWithSeatsBtwTwoCitiesOnDayForAirline(){
-	String query;
-	PreparedStatement preparedStatement;
-	ResultSet rs1;
-	ResultSet rs2;
+private void findAllRoutesWithSeatsBtwTwoCitiesOnDayForAirlineHelper(){
 	String city_a;
 	String city_b;
 	String airline_name;
 	Date flight_date = null;
+	boolean result;
 	SimpleDateFormat df = new SimpleDateFormat("MM/dd/yyyy");
-
-	try{
-		while(true){
-			System.out.println("Please enter first city");
-			city_a = keyboard.nextLine();
-			System.out.println("Please enter second city");
-			city_b = keyboard.nextLine();
-			System.out.println("Please enter a date (MM/dd/yyyy)");
-			boolean haveDate = false;
-			while(!haveDate){
-				try{
-					flight_date = df.parse(keyboard.nextLine());
-					haveDate = true;
-				} catch(ParseException e){
-					System.out.println("Error parsing date.");
-				}
+	while(true){
+		System.out.println("Please enter first city");
+		city_a = keyboard.nextLine();
+		System.out.println("Please enter second city");
+		city_b = keyboard.nextLine();
+		System.out.println("Please enter a date (MM/dd/yyyy)");
+		boolean haveDate = false;
+		while(!haveDate){
+			try{
+				flight_date = df.parse(keyboard.nextLine());
+				haveDate = true;
+			} catch(ParseException e){
+				System.out.println("Error parsing date.");
 			}
-			System.out.println("Please enter an airline");
-			airline_name = keyboard.nextLine();
-			
-			//Direct flight queries
-			query = "SELECT f.flight_number, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, f.weekly_schedule FROM flight f inner join (select count(reservation_number) c_res, flight_number, flight_date from reservation_detail group by flight_number,flight_date) rd on f.flight_number = rd.flight_number inner join Plane p on f.plane_type = p.plane_type INNER JOIN Airline a on f.airline_id = a.airline_id WHERE f.departure_city = ? and f.arrival_city = ? and rd.flight_date = ? and a.airline_name = ? and c_res <> p.plane_capacity";
+		}
+		System.out.println("Please enter an airline");
+		airline_name = keyboard.nextLine();
 
+		result = findAllRoutesWithSeatsBtwTwoCitiesOnDayForAirline(city_a,city_b,airline_name,flight_date);
+
+		System.out.println("\nWould you like to try another?\n Y/N");
+		if(keyboard.nextLine().toLowerCase().equals("y")){
+			continue;
+		}else{
+			break;
+		}
+
+	}
+}
+public boolean findAllRoutesWithSeatsBtwTwoCitiesOnDayForAirline(String city_a, String city_b, String airline_name, Date flight_date){
+	String query;
+	PreparedStatement preparedStatement;
+	ResultSet rs1;
+	ResultSet rs2;
+	boolean ret = false;
+	try{	
+		//Direct flight queries
+		query = "SELECT f.flight_number, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, f.weekly_schedule FROM flight f inner join (select count(reservation_number) c_res, flight_number, flight_date from reservation_detail group by flight_number,flight_date) rd on f.flight_number = rd.flight_number inner join Plane p on f.plane_type = p.plane_type INNER JOIN Airline a on f.airline_id = a.airline_id WHERE f.departure_city = ? and f.arrival_city = ? and rd.flight_date = ? and a.airline_name = ? and c_res <> p.plane_capacity";
+
+		preparedStatement = connection.prepareStatement(query);
+		preparedStatement.setString(1,city_a);
+		preparedStatement.setString(2,city_b);
+		if(flight_date != null){
+			preparedStatement.setDate(3,new java.sql.Date(flight_date.getTime()));
+		} else{
+			System.out.println("Flight date is not set!");
+			return false;
+		}
+		preparedStatement.setString(4,airline_name);
+		rs1 = preparedStatement.executeQuery();
+
+		preparedStatement = connection.prepareStatement(query);
+		preparedStatement.setString(1,city_b);
+		preparedStatement.setString(2,city_a);
+		if(flight_date != null){
+			preparedStatement.setDate(3,new java.sql.Date(flight_date.getTime()));
+		} else{
+			System.out.println("Flight date is not set!");
+			return false;
+		}
+		preparedStatement.setString(4,airline_name);
+		rs2 = preparedStatement.executeQuery();
+
+		boolean firstStatement = rs1.next();
+		boolean secondStatement = rs2.next();
+		System.out.println("\n**RESULTS**");
+		if(firstStatement || secondStatement){
+			System.out.println("\nDirect trips:");
+			while(firstStatement && !rs1.isAfterLast()){
+				System.out.println("\nFlight Number: "+rs1.getString(1));
+				System.out.println("Departure City: "+rs1.getString(2));
+				System.out.println("Arrival City: "+rs1.getString(3));
+				System.out.println("Departure Time: "+rs1.getString(4));
+				System.out.println("Arrival Time: "+rs1.getString(5));		
+				
+				rs1.next();
+			}
+
+			while(secondStatement && !rs2.isAfterLast()){
+				System.out.println("\nFlight Number: "+rs2.getString(1));
+				System.out.println("Departure City: "+rs2.getString(2));
+				System.out.println("Arrival City: "+rs2.getString(3));
+				System.out.println("Departure Time: "+rs2.getString(4));
+				System.out.println("Arrival Time: "+rs2.getString(5));
+				rs2.next();
+			}
+			ret = true;
+		}
+		else{
+			System.out.println("Sorry, no direct routes are available.");
+		}
+
+
+		//Connecting flight queries
+		//Assumption: Connecting flights must be on the same date given by the user.
+		query = "SELECT f.flight_number, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, f.weekly_schedule FROM flight f inner join (select count(reservation_number) c_res, flight_number, flight_date from reservation_detail group by flight_number,flight_date) rd on f.flight_number = rd.flight_number inner join Plane p on f.plane_type = p.plane_type INNER JOIN Airline a on f.airline_id = a.airline_id WHERE f.departure_city = ? and rd.flight_date = ? and a.airline_name = ? and c_res <> p.plane_capacity";
+
+		preparedStatement = connection.prepareStatement(query);
+		preparedStatement.setString(1,city_a);
+		if(flight_date != null){
+			preparedStatement.setDate(2,new java.sql.Date(flight_date.getTime()));
+		} else{
+			System.out.println("Flight date is not set!");
+			return false;
+		}
+		preparedStatement.setString(3,airline_name);
+		rs1 = preparedStatement.executeQuery();
+		boolean hasConnection = false;
+		boolean firstConnection = false;
+		while(rs1.next()){
+			query = "SELECT f.flight_number, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, f.weekly_schedule FROM flight f inner join (select count(reservation_number) c_res, flight_number, flight_date from reservation_detail group by flight_number,flight_date) rd on f.flight_number = rd.flight_number inner join Plane p on f.plane_type = p.plane_type INNER JOIN Airline a on f.airline_id = a.airline_id WHERE f.departure_city = ? and f.arrival_city = ? and rd.flight_date = ? and a.airline_name = ? and c_res <> p.plane_capacity";
 			preparedStatement = connection.prepareStatement(query);
-			preparedStatement.setString(1,city_a);
+			preparedStatement.setString(1,rs1.getString(3));
 			preparedStatement.setString(2,city_b);
 			if(flight_date != null){
 				preparedStatement.setDate(3,new java.sql.Date(flight_date.getTime()));
 			} else{
 				System.out.println("Flight date is not set!");
-				break;
-			}
-			preparedStatement.setString(4,airline_name);
-			rs1 = preparedStatement.executeQuery();
-
-			preparedStatement = connection.prepareStatement(query);
-			preparedStatement.setString(1,city_b);
-			preparedStatement.setString(2,city_a);
-			if(flight_date != null){
-				preparedStatement.setDate(3,new java.sql.Date(flight_date.getTime()));
-			} else{
-				System.out.println("Flight date is not set!");
-				break;
+				return false;
 			}
 			preparedStatement.setString(4,airline_name);
 			rs2 = preparedStatement.executeQuery();
-
-			boolean firstStatement = rs1.next();
-			boolean secondStatement = rs2.next();
-			System.out.println("\n**RESULTS**");
-			if(firstStatement || secondStatement){
-				System.out.println("\nDirect trips:");
-				while(firstStatement && !rs1.isAfterLast()){
-					System.out.println("\nFlight Number: "+rs1.getString(1));
-					System.out.println("Departure City: "+rs1.getString(2));
-					System.out.println("Arrival City: "+rs1.getString(3));
-					System.out.println("Departure Time: "+rs1.getString(4));
-					System.out.println("Arrival Time: "+rs1.getString(5));		
-					
-					rs1.next();
-				}
-
-				while(secondStatement && !rs2.isAfterLast()){
-					System.out.println("\nFlight Number: "+rs2.getString(1));
-					System.out.println("Departure City: "+rs2.getString(2));
-					System.out.println("Arrival City: "+rs2.getString(3));
-					System.out.println("Departure Time: "+rs2.getString(4));
-					System.out.println("Arrival Time: "+rs2.getString(5));
-					rs2.next();
-				}
-				
-			}
-			else{
-				System.out.println("Sorry, no direct routes are available.");
-			}
-
-
-			//Connecting flight queries
-			//Assumption: Connecting flights must be on the same date given by the user.
-			query = "SELECT f.flight_number, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, f.weekly_schedule FROM flight f inner join (select count(reservation_number) c_res, flight_number, flight_date from reservation_detail group by flight_number,flight_date) rd on f.flight_number = rd.flight_number inner join Plane p on f.plane_type = p.plane_type INNER JOIN Airline a on f.airline_id = a.airline_id WHERE f.departure_city = ? and rd.flight_date = ? and a.airline_name = ? and c_res <> p.plane_capacity";
-
-			preparedStatement = connection.prepareStatement(query);
-			preparedStatement.setString(1,city_a);
-			if(flight_date != null){
-				preparedStatement.setDate(2,new java.sql.Date(flight_date.getTime()));
-			} else{
-				System.out.println("Flight date is not set!");
-				break;
-			}
-			preparedStatement.setString(3,airline_name);
-			rs1 = preparedStatement.executeQuery();
-			boolean hasConnection = false;
-			boolean firstConnection = false;
-			while(rs1.next()){
-				query = "SELECT f.flight_number, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, f.weekly_schedule FROM flight f inner join (select count(reservation_number) c_res, flight_number, flight_date from reservation_detail group by flight_number,flight_date) rd on f.flight_number = rd.flight_number inner join Plane p on f.plane_type = p.plane_type INNER JOIN Airline a on f.airline_id = a.airline_id WHERE f.departure_city = ? and f.arrival_city = ? and rd.flight_date = ? and a.airline_name = ? and c_res <> p.plane_capacity";
-				preparedStatement = connection.prepareStatement(query);
-				preparedStatement.setString(1,rs1.getString(3));
-				preparedStatement.setString(2,city_b);
-				if(flight_date != null){
-					preparedStatement.setDate(3,new java.sql.Date(flight_date.getTime()));
-				} else{
-					System.out.println("Flight date is not set!");
-					break;
-				}
-				preparedStatement.setString(4,airline_name);
-				rs2 = preparedStatement.executeQuery();
-				hasConnection = rs2.next();
-				if(hasConnection){
-					int firstFlightArrival = Integer.parseInt(rs1.getString(5));
-					int secondFlightDeparture = Integer.parseInt(rs2.getString(4));
-					while(hasConnection  && !rs2.isAfterLast()){
-						boolean hasSameDay = false;
-						for(int i =0; i< rs1.getString(6).length(); i++){
-							if(rs1.getString(6).charAt(i) == rs2.getString(6).charAt(i)){
-								hasSameDay = true;
-								break;
-							}
+			hasConnection = rs2.next();
+			if(hasConnection){
+				int firstFlightArrival = Integer.parseInt(rs1.getString(5));
+				int secondFlightDeparture = Integer.parseInt(rs2.getString(4));
+				while(hasConnection  && !rs2.isAfterLast()){
+					boolean hasSameDay = false;
+					for(int i =0; i< rs1.getString(6).length(); i++){
+						if(rs1.getString(6).charAt(i) == rs2.getString(6).charAt(i)){
+							hasSameDay = true;
+							break;
 						}
-						if(hasSameDay && (secondFlightDeparture - firstFlightArrival) >= 100 ){
-							if(!firstConnection){
-								firstConnection = true;
-								System.out.println("\nConnection trips:");
-							}
-							System.out.println("\nFlight 1:");
-							System.out.println("Flight Number: "+rs1.getString(1));
-							System.out.println("Departure City: "+rs1.getString(2));
-							System.out.println("Arrival City: "+rs1.getString(3));
-							System.out.println("Departure Time: "+rs1.getString(4));
-							System.out.println("Arrival Time: "+rs1.getString(5));
-
-							System.out.println("\nFlight 2:");
-							System.out.println("Flight Number: "+rs2.getString(1));
-							System.out.println("Departure City: "+rs2.getString(2));
-							System.out.println("Arrival City: "+rs2.getString(3));
-							System.out.println("Departure Time: "+rs2.getString(4));
-							System.out.println("Arrival Time: "+rs2.getString(5));
-							System.out.println();
-
-						}
-						hasConnection = rs2.next();		
 					}
+					if(hasSameDay && (secondFlightDeparture - firstFlightArrival) >= 100 ){
+						if(!firstConnection){
+							firstConnection = true;
+							System.out.println("\nConnection trips:");
+						}
+						System.out.println("\nFlight 1:");
+						System.out.println("Flight Number: "+rs1.getString(1));
+						System.out.println("Departure City: "+rs1.getString(2));
+						System.out.println("Arrival City: "+rs1.getString(3));
+						System.out.println("Departure Time: "+rs1.getString(4));
+						System.out.println("Arrival Time: "+rs1.getString(5));
+
+						System.out.println("\nFlight 2:");
+						System.out.println("Flight Number: "+rs2.getString(1));
+						System.out.println("Departure City: "+rs2.getString(2));
+						System.out.println("Arrival City: "+rs2.getString(3));
+						System.out.println("Departure Time: "+rs2.getString(4));
+						System.out.println("Arrival Time: "+rs2.getString(5));
+						System.out.println();
+						ret = true;
+					}
+					hasConnection = rs2.next();		
 				}
-				
 			}
-			if(!firstConnection){
-				System.out.println("Sorry, no connecting trips available");
-			}
-
-
-			System.out.println("\nWould you like to try another?\n Y/N");
-			if(keyboard.nextLine().toLowerCase().equals("y")){
-				continue;
-			}else{
-				break;
-			}
+			
 		}
+		if(!firstConnection){
+			System.out.println("Sorry, no connecting trips available");
+		}
+	
 	}catch(SQLException e){
 		System.out.println("Unhandled SQLException: ");
 		//System.out.println(e.getMessage());
 		e.printStackTrace();
+		return false;
+	}
+	return ret;
+}
+private void showReservationInfoGivenNumberHelper(){
+	String reservation_number;
+	boolean result;
+	while(true){
+		System.out.println("Please enter your reservation number");
+		reservation_number = keyboard.nextLine();
+
+		result = showReservationInfoGivenNumber(reservation_number);
+
+		System.out.println("\nWould you like to try another?\n Y/N");
+		if(keyboard.nextLine().toLowerCase().equals("y")){
+			continue;
+		}else{
+			break;
+		}
 	}
 }
-private void showReservationInfoGivenNumber()
+public boolean showReservationInfoGivenNumber(String reservation_number)
 {
 	String query = "SELECT f.flight_number, rd.flight_date, f.departure_city, f.arrival_city, f.departure_time, f.arrival_time, a.airline_name, r.cost, r.ticketed, r.start_city, r.end_city FROM flight f inner join reservation_detail rd on f.flight_number = rd.flight_number inner join reservation r on rd.reservation_number = r.reservation_number inner join airline a on f.airline_id = a.airline_id where rd.reservation_number = ? order by rd.leg ASC";
 	PreparedStatement preparedStatement;
 	ResultSet rs;
-	String reservation_number;
+	boolean ret = false;
 	try{
-		preparedStatement = connection.prepareStatement(query);
-		while(true){
-			System.out.println("Please enter your reservation number");
-			reservation_number = keyboard.nextLine();
+		preparedStatement = connection.prepareStatement(query);		
+		preparedStatement.setString(1,reservation_number);
 
-			preparedStatement.setString(1,reservation_number);
+		rs = preparedStatement.executeQuery();
 
-			rs = preparedStatement.executeQuery();
-
-			boolean hasResult = rs.next();
-			if(hasResult){
-				System.out.println("\n**Reservation Details**");
-				System.out.println("Start City: "+rs.getString(10));
-				System.out.println("End City: "+rs.getString(11));
-				System.out.println("Cost: "+rs.getInt(8));
-				System.out.println("Ticketed: "+rs.getString(9));
-				int count = 1;
-				System.out.println("\n**Flights**");
-				do{
-					System.out.println("\nFlight "+count+":");
-					System.out.println("Airline: "+rs.getString(7));
-					System.out.println("Flight Number: "+rs.getString(1));
-					System.out.println("Flight Date: "+rs.getDate(2));
-					System.out.println("Departure City: "+rs.getString(3));
-					System.out.println("Arrival City: "+rs.getString(4));
-					System.out.println("Departure Time: "+rs.getString(5));
-					System.out.println("Arrival Time: "+rs.getString(6));
-					count++;
-				}while(rs.next());
-			}
-			else{
-				System.out.println("Reservation not found.");
-			}
-
-			System.out.println("\nWould you like to try another?\n Y/N");
-			if(keyboard.nextLine().toLowerCase().equals("y")){
-				continue;
-			}else{
-				break;
-			}
-
+		boolean hasResult = rs.next();
+		if(hasResult){
+			ret = true;
+			System.out.println("\n**Reservation Details**");
+			System.out.println("Start City: "+rs.getString(10));
+			System.out.println("End City: "+rs.getString(11));
+			System.out.println("Cost: "+rs.getInt(8));
+			System.out.println("Ticketed: "+rs.getString(9));
+			int count = 1;
+			System.out.println("\n**Flights**");
+			do{
+				System.out.println("\nFlight "+count+":");
+				System.out.println("Airline: "+rs.getString(7));
+				System.out.println("Flight Number: "+rs.getString(1));
+				System.out.println("Flight Date: "+rs.getDate(2));
+				System.out.println("Departure City: "+rs.getString(3));
+				System.out.println("Arrival City: "+rs.getString(4));
+				System.out.println("Departure Time: "+rs.getString(5));
+				System.out.println("Arrival Time: "+rs.getString(6));
+				count++;
+			}while(rs.next());
 		}
+		else{
+			System.out.println("Reservation not found.");
+		}
+
+		
+
+		
 	} catch(SQLException e){
 		System.out.println("Unhandled SQLException: ");
 		//System.out.println(e.getMessage());
 		e.printStackTrace();
+		return false;
+	}
+	return ret;
+}
+private void buyTicketOnReservationHelper(){
+	String reservation_number;
+	boolean result;
+	while(true){
+		System.out.println("Please enter your reservation number");
+		reservation_number = keyboard.nextLine();
+		result = buyTicketOnReservation(reservation_number);
+
+		System.out.println("\nWould you like to try another?\n Y/N");
+		if(keyboard.nextLine().toLowerCase().equals("y")){
+			continue;
+		}else{
+			break;
+		}
 	}
 }
-private void buyTicketOnReservation()
+public boolean buyTicketOnReservation(String reservation_number)
 {
 	String query="UPDATE reservation r set r.ticketed = 'Y' where r.reservation_number = ? and r.ticketed = 'N'";
 	PreparedStatement preparedStatement;
 	int rows;
-	String reservation_number;
+	
 
 	try{
 		preparedStatement = connection.prepareStatement(query);
-		while(true){
-			System.out.println("Please enter your reservation number");
-			reservation_number = keyboard.nextLine();
+			
+		preparedStatement.setString(1,reservation_number);
 
-			preparedStatement.setString(1,reservation_number);
-
-			rows = preparedStatement.executeUpdate();
-			if(rows > 0){
-				System.out.println("\nReservation purchased!");
-				
-			}
-			else{
-				System.out.println("Reservation not found or already purchased.");
-			}
-
-			System.out.println("\nWould you like to try another?\n Y/N");
-			if(keyboard.nextLine().toLowerCase().equals("y")){
-				continue;
-			}else{
-				break;
-			}
-
+		rows = preparedStatement.executeUpdate();
+		if(rows > 0){
+			System.out.println("\nReservation purchased!");
+			return true;
 		}
+		else{
+			System.out.println("Reservation not found or already purchased.");
+			return false;
+		}
+
+		
+
+		
 	} catch(SQLException e){
 		System.out.println("Unhandled SQLException: ");
 		//System.out.println(e.getMessage());
 		e.printStackTrace();
+		return false;
 	}
 }
 private void makeReservation()
