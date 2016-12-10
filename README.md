@@ -2,6 +2,7 @@
 Milestone 2:
 Please use DriverProgram to test
 Milestone 3:
+IMPORTANT: Before running StressTestDriver, please be sure to insert sample_data.sql into the database
 Fixed from previous milestones:
 -DB Schema now makes use of a function and a procedure
 -cancelReservation now downsizes the plane if it can (before this functionality was delegated to planeUpgrade, but didn't quite work right)
