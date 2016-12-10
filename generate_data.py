@@ -54,10 +54,11 @@ def weekly_scheduleGenerator():
 		else:
 			schedule += "-"
 	return schedule
-def generateAirline(num = 10):
+def generateAirline(num = 10, startIndex = 1):
 	global airline_tups
+	startIndex = startIndex * num 
 	airline_words = ["United","Continental","Service","Air","Airline","American","Delta","South","North","East","West","Northeast","Northwest","Southeast","Southwest","Airways","Jet","Spirit","Frontier","Incredible","Discount"]
-	for x in range(1,num+1):
+	for x in range(startIndex+1,startIndex+num+1):
 		num_words = random.randint(2,5)
 		airline_name_arr = []
 		airline_abbreviation = ""
@@ -68,11 +69,11 @@ def generateAirline(num = 10):
 		airline_tups[x] = (str(x),"'"+" ".join(airline_name_arr)+"'","'"+airline_abbreviation+"'",random.randint(1900, 2016))
 	return airline_tups
 
-def generatePlane(num = 30):
+def generatePlane(num = 30, startIndex = 1):
 	global plane_tups
-
+	startIndex = startIndex * num
 	manufacturers = ["Airbus","Boeing", "Lockheed", "Embraer"]
-	for x in range(1,num+1):
+	for x in range(startIndex+1,startIndex+num+1):
 		m = random.choice(manufacturers)
 		p_type = "'"+m[0]+str(random.randint(0,999)).zfill(3)+"'"
 		owner_id = random.choice(airline_tups.keys())
@@ -82,14 +83,14 @@ def generatePlane(num = 30):
 		plane_tups[(p_type,owner_id)] = (p_type,"'"+m+"'",random.randint(10,200),dateToSql(randomDate()),random.randint(1900, 2016),owner_id)
 	return plane_tups
 
-def generateFlight(num = 106):
+def generateFlight(num = 106, startIndex = 1):
 	global airline_tups
 	global plane_tups
 	global price
 	global flight_tups
-
+	startIndex = startIndex * num
 	airports = ["ATL","LAX","ORD","DFW","JFK","DEN","SFO","CLT","LAS","PHX","MIA","IAH","SEA","MCO","EWR","MSP","BOS","DTW","PHL","LGA","FLL","BWI","DCA", "PIT"]
-	for x in range(1,num+1,6):
+	for x in range(startIndex+1,startIndex+num+1,6):
 		i = x
 		#flight there
 		constant_air_id = ""
@@ -218,15 +219,15 @@ def generateFlight(num = 106):
 	return flight_tups
 
 
-def generateCustomer(num = 200):
+def generateCustomer(num = 200, startIndex = 1):
 	global airline_tups
 	global customer_tups
-
+	startIndex = startIndex * num
 	salutations = ["Mr","Mrs","Ms"]
 	first_names = ["Aaron","Bill","Bob","Richard","Robert","Laurence","Tim","George","Sam","Emily","Tiffany","Mackenzie","Victoria","Jessie","Jessica","Kylie"]
 	last_names = ["Smith","White","Black","Keeton","Brown","Fox","Swift","Eastwood"]
 
-	for x in range(1,num+1):
+	for x in range(startIndex+1,startIndex+num+1):
 		cid = "'"+str(x)+"'"
 		salutation = "'"+random.choice(salutations)+"'"
 		first_name = random.choice(first_names)
@@ -309,13 +310,13 @@ def reservationsHelper(reservation_number,flight,flight_info,start_city,end_city
 
 
 
-def generateReservations(num = 300):
+def generateReservations(num = 300, startIndex = 1):
 	global flight_tups
 	global reservation_tups
 	global reservation_details
-
+	startIndex = startIndex * num
 	ticketed = ["'Y'","'N'"]
-	for x in range(1,num+1):
+	for x in range(startIndex+1,startIndex+num+1):
 		reservation_number = "'"+str(x)+"'"
 		cid = random.choice(customer_tups.keys())
 		credit_card = customer_tups[cid][4]
@@ -355,7 +356,7 @@ def exportTupsToCSV(d):
 	return returnString
 if __name__ == "__main__":
 
-	for i in range(10):
+	for i in range(0,10):
 		airline_tups = {}
 		plane_tups = {}
 		customer_tups = {}
@@ -363,11 +364,11 @@ if __name__ == "__main__":
 		reservation_details = {}
 		flight_tups = {}
 		price = {}
-		generateAirline()
-		generatePlane()
-		generateFlight()
-		generateCustomer()
-		generateReservations()
+		generateAirline(startIndex = i)
+		generatePlane(startIndex = i)
+		generateFlight(startIndex = i)
+		generateCustomer(startIndex = i)
+		generateReservations(startIndex = i)
 
 		# with open('sample_data.sql', 'a') as the_file:
 		#     the_file.write(exportTupsToSql(airline_tups,"Airline")+"\ncommit;\n")
@@ -391,7 +392,10 @@ if __name__ == "__main__":
 		with open('plane_information-'+str(i)+'.csv', 'a') as the_file:
 			the_file.write(exportTupsToCSV(plane_tups))
 
-
+		with open('sample_data.sql', 'a') as the_file:
+			the_file.write(exportTupsToSql(customer_tups,"Customer")+"\ncommit;\n")
+			the_file.write(exportTupsToSql(reservation_tups,"Reservation")+"\ncommit;\n")
+			the_file.write(exportTupsToSql(reservation_details,"Reservation_detail")+"\ncommit;\n")
 
 
 
