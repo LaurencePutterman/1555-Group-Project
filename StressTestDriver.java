@@ -1,9 +1,18 @@
+import java.text.SimpleDateFormat;
+import java.security.SecureRandom;
 import java.io.*;
 import java.sql.*;
 import java.util.Scanner;
+import java.util.ArrayList;
+import java.sql.Date;
 
 public class StressTestDriver
 {
+	static final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	static final String NUM = "0123456789";
+	static SecureRandom rnd = new SecureRandom();
+	static String[] cities = {"ATL","LAX","ORD","DFW","JFK","DEN","SFO","CLT","LAS","PHX","MIA","IAH","SEA","MCO","EWR","MSP","BOS","DTW","PHL","LGA","FLL","BWI","DCA", "PIT"};
+	static ArrayList<String> airline_names = new ArrayList<String>();
 	public static void main(String args[])
 	{
 		//create db connection
@@ -39,7 +48,7 @@ public class StressTestDriver
 		System.out.println("Administrator Task 2: Load airline information");
 		query = "SELECT count(*) FROM Airline";
 		try{
-			for(int counter = 0; counter < 10; counter++){
+			for(int counter = 1; counter < 10; counter++){
 				String filename = "airline_information-" + counter + ".csv";
 				//insert the contents of the file
 				int result = AdministratorTasks.loadAirlineInfo(new File(filename), connection);
@@ -49,6 +58,12 @@ public class StressTestDriver
 				long recordCount = rs.getLong(1);
 				System.out.println("Loaded " + result + " airline records. The table now contains " + recordCount + " records.");
 			}
+			query = "SELECT airline_name FROM Airline WHERE ROWNUM <= 40";
+			rs = statement.executeQuery(query);
+			while(rs.next()) {
+			    airline_names.add(rs.getString(1));
+			}
+
 		}catch(Exception e){
 			System.out.println("An unhandled exception occurred while inserting airline records: " + e.getMessage());
 		}
@@ -57,7 +72,7 @@ public class StressTestDriver
 		System.out.println("Administrator Task 5: Load plane information");
 		query = "SELECT count(*) FROM Plane";
 		try{
-			for(int counter = 0; counter < 10; counter++){
+			for(int counter = 1; counter < 10; counter++){
 				String filename = "plane_information-" + counter + ".csv";
 				//insert the contents of the file
 				int result = AdministratorTasks.loadPlaneInfo(new File(filename), connection);
@@ -75,7 +90,7 @@ public class StressTestDriver
 		System.out.println("Administrator Task 3: Load schedule information");
 		query = "SELECT count(*) FROM Flight";
 		try{
-			for(int counter = 0; counter < 10; counter++){
+			for(int counter = 1; counter < 10; counter++){
 				String filename = "schedule_information-" + counter + ".csv";
 				//insert the contents of the file
 				int result = AdministratorTasks.loadFlightInfo(new File(filename), connection);
@@ -93,7 +108,7 @@ public class StressTestDriver
 		System.out.println("Administrator Task 4: Load price information from file");
 		query = "SELECT count(*) FROM Price";
 		try{
-			for(int counter = 0; counter < 10; counter++){
+			for(int counter = 1; counter < 10; counter++){
 				String filename = "pricing_information-" + counter + ".csv";
 				//insert the contents of the file
 				int result = AdministratorTasks.loadPricingInfoFromFile(new File(filename), connection);
@@ -112,7 +127,7 @@ public class StressTestDriver
 		query = "SELECT * FROM Price";
 		try{
 			rs = statement.executeQuery(query);
-			for(int counter = 0; counter < 10 && rs.next(); counter++){
+			for(int counter = 1; counter < 10 && rs.next(); counter++){
 				String departureCity = rs.getString(1);
 				String arrivalCity = rs.getString(2);
 				System.out.println("Setting high price of flight from " + departureCity + " to " + arrivalCity + " to " + 500 + " and low price to " + 400);
@@ -131,7 +146,7 @@ public class StressTestDriver
 		try{
 			query = "SELECT * FROM Reservation_detail";
 			rs = statement.executeQuery(query);
-			for(int counter = 0; counter < 10 && rs.next(); counter++){
+			for(int counter = 1; counter < 10 && rs.next(); counter++){
 				String flightNum = rs.getString(2);
 				java.sql.Date flightDate = rs.getDate(3);
 				//turn the date into a string that can be accepted by createManifest
@@ -147,7 +162,180 @@ public class StressTestDriver
 			System.out.println("Unhandled exception while printing flight manifests " + e.getMessage());
 		}
 		
-		
+
+		//CUSTOMER TASKS
+
+		CustomerTasks ct = new CustomerTasks(connection);
+		//Customer task 1: Add customers
+		String [] first_names = new String[10];
+		String [] last_names = new String[10];
+		try{
+			String[] salutations = {"Mr","Ms","Mrs"};
+			for(int counter = 0; counter < 10; counter++){
+				String first_name = randomString(10);
+				String last_name = randomString(10);
+				String salutation = salutations[rnd.nextInt(salutations.length)];
+				String street = randomString(10);
+				String city = randomString(10);
+				String state = randomString(2);
+				String phone = randomNumber(10);
+				String email = randomString(5)+"@"+randomString(5)+".com";
+				String credit_card_num = randomNumber(16);
+				String expirationString = "05/20";
+
+				//insert the contents of the file
+				boolean result = ct.addCustomer(first_name,last_name,salutation,street,city,state,phone,email,credit_card_num,expirationString);
+				if(result){
+					first_names[counter] = first_name;
+					last_names[counter] = last_name;
+				}	
+			}
+		}
+		catch(Exception e){
+			System.out.println("An unhandled exception occurred while adding customer: " + e.getMessage());
+		}
+
+		//Customer task 2: Show Customer Info
+		try{
+			for(int counter = 0; counter < 10; counter++){
+				String first_name = first_names[counter];
+				String last_name = last_names[counter];
+
+				//insert the contents of the file
+				boolean result = ct.showCustomerInfo(first_name,last_name);
+					
+			}
+		}catch(Exception e){
+			System.out.println("An unhandled exception occurred while showing customer: " + e.getMessage());
+		}
+
+		//Customer task 3: Find Price For Flights Between Two Cities
+		try{
+			
+			for(int counter = 0; counter < 10; counter++){
+				String city_a = cities[rnd.nextInt(cities.length)];
+				String city_b = cities[rnd.nextInt(cities.length)];
+
+				//insert the contents of the file
+				boolean result = ct.findPriceForFlightsBetweenTwoCities(city_a,city_b);
+					
+			}
+		}catch(Exception e){
+			System.out.println("An unhandled exception occurred while finding prices: " + e.getMessage());
+		}
+
+		//Customer task 4: Find all routes Between Two Cities
+		try{
+			
+			for(int counter = 0; counter < 10; counter++){
+				String city_a = cities[rnd.nextInt(cities.length)];
+				String city_b = cities[rnd.nextInt(cities.length)];
+
+				//insert the contents of the file
+				boolean result = ct.findAllRoutesBetweenTwoCities(city_a,city_b);
+					
+			}
+		}catch(Exception e){
+			System.out.println("An unhandled exception occurred finding routes: " + e.getMessage());
+		}
+
+		//Customer task 5: Find all routes Between Two Cities for an Airline
+		try{
+			
+			for(int counter = 0; counter < 10; counter++){
+				String city_a = cities[rnd.nextInt(cities.length)];
+				String city_b = cities[rnd.nextInt(cities.length)];
+				String airline_name = airline_names.get(rnd.nextInt(airline_names.size()));
+
+				//insert the contents of the file
+				boolean result = ct.findAllRoutesBtwTwoCitiesForAirline(city_a,city_b,airline_name);
+					
+			}
+		}catch(Exception e){
+			System.out.println("An unhandled exception occurred finding routes with airline: " + e.getMessage());
+		}
+
+
+		//Customer task 6: Find all routes Between Two Cities on Day
+		try{
+			SimpleDateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+			for(int counter = 0; counter < 10; counter++){
+				String city_a = cities[rnd.nextInt(cities.length)];
+				String city_b = cities[rnd.nextInt(cities.length)];
+				java.util.Date flight_date = df.parse("08/21/2002");
+
+				//insert the contents of the file
+				boolean result = ct.findAllRoutesWithSeatsBtwTwoCitiesOnDay(city_a,city_b,flight_date);
+					
+			}
+		}catch(Exception e){
+			System.out.println("An unhandled exception occurred finding routes with airline: " + e.getMessage());
+		}
+
+		//Customer task 7: Find all routes Between Two Cities on Day on Airline
+		try{
+			SimpleDateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+			for(int counter = 0; counter < 10; counter++){
+				String city_a = cities[rnd.nextInt(cities.length)];
+				String city_b = cities[rnd.nextInt(cities.length)];
+				java.util.Date flight_date = df.parse("08/21/2002");
+				String airline_name = airline_names.get(rnd.nextInt(airline_names.size()));
+
+				//insert the contents of the file
+				boolean result = ct.findAllRoutesWithSeatsBtwTwoCitiesOnDayForAirline(city_a,city_b,airline_name,flight_date);
+					
+			}
+		}catch(Exception e){
+			System.out.println("An unhandled exception occurred finding routes with airline: " + e.getMessage());
+		}
+
+
+		//Customer task 9: Find all routes Between Two Cities on Day on Airline
+		try{
+			query = "SELECT reservation_number FROM reservation WHERE ticketed='N' and ROWNUM <= 9";
+			rs = statement.executeQuery(query);
+			ArrayList<String> reservation_numbers = new ArrayList<String>();
+			while(rs.next()) {
+			    reservation_numbers.add(rs.getString(1));
+			}
+			query = "SELECT reservation_number FROM reservation WHERE ticketed='Y' and ROWNUM <= 1";
+			rs = statement.executeQuery(query);
+			while(rs.next()) {
+			    reservation_numbers.add(rs.getString(1));
+			}
+			for(int counter = 0; counter < 10; counter++){
+				String reservation_number = reservation_numbers.get(counter);
+
+				boolean result = ct.showReservationInfoGivenNumber(reservation_number);
+					
+			}
+		}catch(Exception e){
+			System.out.println("An unhandled exception occurred finding routes with airline: " + e.getMessage());
+		}
+
+		//Customer task 10: Find all routes Between Two Cities on Day on Airline
+		try{
+			query = "SELECT reservation_number FROM reservation WHERE ticketed='N' and ROWNUM <= 9";
+			rs = statement.executeQuery(query);
+			ArrayList<String> reservation_numbers = new ArrayList<String>();
+			while(rs.next()) {
+			    reservation_numbers.add(rs.getString(1));
+			}
+			query = "SELECT reservation_number FROM reservation WHERE ticketed='Y' and ROWNUM <= 1";
+			rs = statement.executeQuery(query);
+			while(rs.next()) {
+			    reservation_numbers.add(rs.getString(1));
+			}
+			for(int counter = 0; counter < 10; counter++){
+				String reservation_number = reservation_numbers.get(counter);
+
+				boolean result = ct.buyTicketOnReservation(reservation_number);
+					
+			}
+		}catch(Exception e){
+			System.out.println("An unhandled exception occurred finding routes with airline: " + e.getMessage());
+		}
+
 		//test the deletion function (can only do this once!)
 		System.out.println("Administrator Task 1: Delete all contents of the database");
 		AdministratorTasks.eraseDatabase(connection);
@@ -161,5 +349,17 @@ public class StressTestDriver
 			System.out.println("Unhandled exception while erasing the contents of the database " + e.getMessage());
 		}
 	}
+	public static String randomNumber(int len){
+		StringBuilder sb = new StringBuilder( len );
+		for( int i = 0; i < len; i++ ) 
+		  sb.append( NUM.charAt( rnd.nextInt(NUM.length()) ) );
+		return sb.toString();
+	}
+	public static String randomString( int len ){
+	   StringBuilder sb = new StringBuilder( len );
+	   for( int i = 0; i < len; i++ ) 
+	      sb.append( AB.charAt( rnd.nextInt(AB.length()) ) );
+	   return sb.toString();
+	}	
 }	
 

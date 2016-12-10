@@ -13,7 +13,7 @@ public class ProjectDriver
 			switch(option)
 			{
 				case '1':
-					CustomerTasks customerInterface = new CustomerTasks();
+					CustomerTasks customerInterface = new CustomerTasks("mlp81","3808669");
 					break;
 				case '2':
 					AdministratorInterface adminInterface = new AdministratorInterface();

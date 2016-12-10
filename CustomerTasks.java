@@ -35,7 +35,7 @@ public class CustomerTasks
   private String username, password;
   private Scanner keyboard;
 
-  public CustomerTasks()
+  public CustomerTasks(String username, String password)
   {
     /*Making a connection to a DB causes certian exceptions.  In order to handle
     these, you either put the DB stuff in a try block or have your function
@@ -43,8 +43,6 @@ public class CustomerTasks
     try blocks*/
     //username = "shb64"; //This is your username in oracle
     //password = "3556313"; //This is your password in oracle
-    username = "mlp81";
-    password = "3808669";
     try{
       //Register the oracle driver.  This needs the oracle files provided
       //in the oracle.zip file, unzipped into the local directory and 
@@ -118,6 +116,9 @@ public class CustomerTasks
     }
 
     System.out.println("Exiting program...");
+}
+public CustomerTasks(Connection c){
+	connection = c;
 }
 private void addCustomerHelper(){
 	String first_name;
@@ -1117,7 +1118,6 @@ public boolean buyTicketOnReservation(String reservation_number)
 	String query="UPDATE reservation r set r.ticketed = 'Y' where r.reservation_number = ? and r.ticketed = 'N'";
 	PreparedStatement preparedStatement;
 	int rows;
-	
 
 	try{
 		preparedStatement = connection.prepareStatement(query);
@@ -1127,14 +1127,13 @@ public boolean buyTicketOnReservation(String reservation_number)
 		rows = preparedStatement.executeUpdate();
 		if(rows > 0){
 			System.out.println("\nReservation purchased!");
+			connection.commit();
 			return true;
 		}
 		else{
 			System.out.println("Reservation not found or already purchased.");
 			return false;
-		}
-
-		
+		}	
 
 		
 	} catch(SQLException e){
