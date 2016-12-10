@@ -1,5 +1,6 @@
 import java.io.*;
 import java.sql.*;
+import java.util.Scanner;
 
 public class StressTestDriver
 {
@@ -125,7 +126,26 @@ public class StressTestDriver
 			System.out.println("An unhandled exception occurred while updating prices: " + e.getMessage());
 		}
 		
-		
+		//test administrator task 6 by creating the manifests for the first 10 flights people have reservations for in reservation_detail
+		System.out.println("Administrator Task 6: print flight manifest");
+		try{
+			query = "SELECT * FROM Reservation_detail";
+			rs = statement.executeQuery(query);
+			for(int counter = 0; counter < 10 && rs.next(); counter++){
+				String flightNum = rs.getString(2);
+				java.sql.Date flightDate = rs.getDate(3);
+				//turn the date into a string that can be accepted by createManifest
+				Scanner dateScanner = new Scanner(flightDate.toString()).useDelimiter("-");
+				String year = dateScanner.next();
+				String month = dateScanner.next();
+				String day = dateScanner.next();
+				String flightDateString = month + "/" + day + "/" + year;
+				System.out.println("Manifest for flight " + flightNum + " on " + flightDateString + ":");
+				AdministratorTasks.createManifest(flightNum, flightDateString, connection);
+			}
+		}catch(Exception e){
+			System.out.println("Unhandled exception while printing flight manifests " + e.getMessage());
+		}
 		
 		
 		//test the deletion function (can only do this once!)
