@@ -54,7 +54,7 @@ def weekly_scheduleGenerator():
 		else:
 			schedule += "-"
 	return schedule
-def generateAirline(num = 10, startIndex = 1):
+def generateAirline(num = 10, startIndex = 1, sql=True):
 	global airline_tups
 	startIndex = startIndex * num 
 	airline_words = ["United","Continental","Service","Air","Airline","American","Delta","South","North","East","West","Northeast","Northwest","Southeast","Southwest","Airways","Jet","Spirit","Frontier","Incredible","Discount"]
@@ -66,10 +66,13 @@ def generateAirline(num = 10, startIndex = 1):
 			temp = random.choice(airline_words)
 			airline_name_arr.append(temp)
 			airline_abbreviation += temp[0]
-		airline_tups[x] = (str(x),"'"+" ".join(airline_name_arr)+"'","'"+airline_abbreviation+"'",random.randint(1900, 2016))
+		if sql:
+			airline_tups[x] = (str(x),"'"+" ".join(airline_name_arr)+"'","'"+airline_abbreviation+"'",random.randint(1900, 2016))
+		else:
+			airline_tups[x] = (str(x)," ".join(airline_name_arr),airline_abbreviation,random.randint(1900, 2016))
 	return airline_tups
 
-def generatePlane(num = 30, startIndex = 1):
+def generatePlane(num = 30, startIndex = 1, sql=True):
 	global plane_tups
 	startIndex = startIndex * num
 	manufacturers = ["Airbus","Boeing", "Lockheed", "Embraer"]
@@ -80,10 +83,13 @@ def generatePlane(num = 30, startIndex = 1):
 		while p_type in plane_tups:
 			p_type = "'"+m[0]+str(random.randint(0,999)).zfill(3)+"'"
 
-		plane_tups[(p_type,owner_id)] = (p_type,"'"+m+"'",random.randint(10,200),dateToSql(randomDate()),random.randint(1900, 2016),owner_id)
+		if sql:
+			plane_tups[(p_type,owner_id)] = (p_type,"'"+m+"'",random.randint(10,200),dateToSql(randomDate()),random.randint(1900, 2016),owner_id)
+		else:
+			plane_tups[(p_type[1:-1],owner_id)] = (p_type[1:-1],m,random.randint(10,200),randomDate(),random.randint(1900, 2016),owner_id)
 	return plane_tups
 
-def generateFlight(num = 106, startIndex = 1):
+def generateFlight(num = 106, startIndex = 1, sql=True):
 	global airline_tups
 	global plane_tups
 	global price
@@ -109,9 +115,15 @@ def generateFlight(num = 106, startIndex = 1):
 		while departure_city == arrival_city or (departure_city,arrival_city) in price:
 			arrival_city = "'"+random.choice(airports)+"'"
 
-		flight_tups[fn] = (fn,"'"+air_id+"'",p_type,departure_city,arrival_city,departure_time,arrival_time,weekly_schedule)
+		if sql:
+			flight_tups[fn] = (fn,"'"+air_id+"'",p_type,departure_city,arrival_city,departure_time,arrival_time,weekly_schedule)
 
-		price[(departure_city,arrival_city)] = (departure_city,arrival_city,"'"+air_id+"'",random.randint(500, 1000), random.randint(100,499))
+			price[(departure_city,arrival_city)] = (departure_city,arrival_city,"'"+air_id+"'",random.randint(500, 1000), random.randint(100,499))
+		else:
+			flight_tups[fn[1:-1]] = (fn[1:-1],air_id,p_type,departure_city[1:-1],arrival_city[1:-1],departure_time,arrival_time,weekly_schedule[1:-1])
+
+			price[(departure_city[1:-1],arrival_city[1:-1])] = (departure_city[1:-1],arrival_city[1:-1],air_id,random.randint(500, 1000), random.randint(100,499))
+
 
 		#make sure a connection exists
 		i += 1
@@ -130,11 +142,14 @@ def generateFlight(num = 106, startIndex = 1):
 			arrival_time = random.randint(0,2359)
 		while departure_city_connect1 == arrival_city_connect1 or (departure_city_connect1,arrival_city_connect1) in price:
 			arrival_city_connect1 = "'"+random.choice(airports)+"'"
+		if sql:
+			flight_tups[fn] = (fn,"'"+air_id+"'",p_type,departure_city_connect1,arrival_city_connect1,departure_time,arrival_time,weekly_schedule)
 
-		flight_tups[fn] = (fn,"'"+air_id+"'",p_type,departure_city_connect1,arrival_city_connect1,departure_time,arrival_time,weekly_schedule)
+			price[(departure_city_connect1,arrival_city_connect1)] = (departure_city_connect1,arrival_city_connect1,"'"+air_id+"'",random.randint(500, 1000), random.randint(100,499))
+		else:
+			flight_tups[fn[1:-1]] = (fn[1:-1],air_id,p_type,departure_city_connect1[1:-1],arrival_city_connect1[1:-1],departure_time,arrival_time,weekly_schedule[1:-1])
 
-		price[(departure_city_connect1,arrival_city_connect1)] = (departure_city_connect1,arrival_city_connect1,"'"+air_id+"'",random.randint(500, 1000), random.randint(100,499))
-
+			price[(departure_city_connect1[1:-1],arrival_city_connect1[1:-1])] = (departure_city_connect1[1:-1],arrival_city_connect1[1:-1],air_id,random.randint(500, 1000), random.randint(100,499))
 		#connection 2
 		i += 1
 		fn = "'"+str(i)+"'"
@@ -151,10 +166,14 @@ def generateFlight(num = 106, startIndex = 1):
 		while arrival_time == departure_time:
 			arrival_time = random.randint(0,2359)
 
-		flight_tups[fn] = (fn,"'"+air_id+"'",p_type,departure_city_connect2,arrival_city_connect2,departure_time,arrival_time,weekly_schedule)
+		if sql:
+			flight_tups[fn] = (fn,"'"+air_id+"'",p_type,departure_city_connect2,arrival_city_connect2,departure_time,arrival_time,weekly_schedule)
 
-		price[(departure_city_connect2,arrival_city_connect2)] = (departure_city_connect2,arrival_city_connect2,"'"+air_id+"'",random.randint(500, 1000), random.randint(100,499))
+			price[(departure_city_connect2,arrival_city_connect2)] = (departure_city_connect2,arrival_city_connect2,"'"+air_id+"'",random.randint(500, 1000), random.randint(100,499))
+		else:
+			flight_tups[fn[1:-1]] = (fn[1:-1],air_id,p_type,departure_city_connect2[1:-1],arrival_city_connect2[1:-1],departure_time,arrival_time,weekly_schedule[1:-1])
 
+			price[(departure_city_connect2[1:-1],arrival_city_connect2[1:-1])] = (departure_city_connect2[1:-1],arrival_city_connect2[1:-1],air_id,random.randint(500, 1000), random.randint(100,499))
 
 		#flight back
 		i += 1
@@ -172,9 +191,15 @@ def generateFlight(num = 106, startIndex = 1):
 		while arrival_time == departure_time:
 			arrival_time = random.randint(0,2359)
 
-		flight_tups[fn] = (fn,"'"+air_id+"'",p_type,departure_city_back,arrival_city_back,departure_time,arrival_time,weekly_schedule)
+		if sql:
+			flight_tups[fn] = (fn,"'"+air_id+"'",p_type,departure_city_back,arrival_city_back,departure_time,arrival_time,weekly_schedule)
 
-		price[(departure_city_back,arrival_city_back)] = (departure_city_back,arrival_city_back,"'"+air_id+"'",random.randint(500, 1000), random.randint(100,499))
+			price[(departure_city_back,arrival_city_back)] = (departure_city_back,arrival_city_back,"'"+air_id+"'",random.randint(500, 1000), random.randint(100,499))
+		else:
+			flight_tups[fn[1:-1]] = (fn[1:-1],air_id,p_type,departure_city_back[1:-1],arrival_city_back[1:-1],departure_time,arrival_time,weekly_schedule[1:-1])
+
+			price[(departure_city_back[1:-1],arrival_city_back[1:-1])] = (departure_city_back[1:-1],arrival_city_back[1:-1],air_id,random.randint(500, 1000), random.randint(100,499))
+	
 
 		#make sure a connection exists
 		i += 1
@@ -192,10 +217,14 @@ def generateFlight(num = 106, startIndex = 1):
 		while arrival_time == departure_time:
 			arrival_time = random.randint(0,2359)
 
-		flight_tups[fn] = (fn,"'"+air_id+"'",p_type,departure_city_connect1,arrival_city_connect1,departure_time,arrival_time,weekly_schedule)
+		if sql:
+			flight_tups[fn] = (fn,"'"+air_id+"'",p_type,departure_city_connect1,arrival_city_connect1,departure_time,arrival_time,weekly_schedule)
 
-		price[(departure_city_connect1,arrival_city_connect1)] = (departure_city_connect1,arrival_city_connect1,"'"+air_id+"'",random.randint(500, 1000), random.randint(100,499))
+			price[(departure_city_connect1,arrival_city_connect1)] = (departure_city_connect1,arrival_city_connect1,"'"+air_id+"'",random.randint(500, 1000), random.randint(100,499))
+		else:
+			flight_tups[fn[1:-1]] = (fn[1:-1],air_id,p_type,departure_city_connect1[1:-1],arrival_city_connect1[1:-1],departure_time,arrival_time,weekly_schedule[1:-1])
 
+			price[(departure_city_connect1[1:-1],arrival_city_connect1[1:-1])] = (departure_city_connect1[1:-1],arrival_city_connect1[1:-1],air_id,random.randint(500, 1000), random.randint(100,499))
 		#connection 2
 		i += 1
 		fn = "'"+str(i)+"'"
@@ -211,10 +240,15 @@ def generateFlight(num = 106, startIndex = 1):
 		weekly_schedule = "'"+weekly_scheduleGenerator()+"'"
 		while arrival_time == departure_time:
 			arrival_time = random.randint(0,2359)
-			
-		flight_tups[fn] = (fn,"'"+air_id+"'",p_type,departure_city_connect2,arrival_city_connect2,departure_time,arrival_time,weekly_schedule)
+		
+		if sql:
+			flight_tups[fn] = (fn,"'"+air_id+"'",p_type,departure_city_connect2,arrival_city_connect2,departure_time,arrival_time,weekly_schedule)
 
-		price[(departure_city_connect2,arrival_city_connect2)] = (departure_city_connect2,arrival_city_connect2,"'"+air_id+"'",random.randint(500, 1000), random.randint(100,499))
+			price[(departure_city_connect2,arrival_city_connect2)] = (departure_city_connect2,arrival_city_connect2,"'"+air_id+"'",random.randint(500, 1000), random.randint(100,499))
+		else:
+			flight_tups[fn[1:-1]] = (fn[1:-1],air_id,p_type,departure_city_connect2[1:-1],arrival_city_connect2[1:-1],departure_time,arrival_time,weekly_schedule[1:-1])
+
+			price[(departure_city_connect2[1:-1],arrival_city_connect2[1:-1])] = (departure_city_connect2[1:-1],arrival_city_connect2[1:-1],air_id,random.randint(500, 1000), random.randint(100,499))
 
 	return flight_tups
 
@@ -364,39 +398,38 @@ if __name__ == "__main__":
 		reservation_details = {}
 		flight_tups = {}
 		price = {}
-		generateAirline(startIndex = i)
-		generatePlane(startIndex = i)
-		generateFlight(startIndex = i)
-		generateCustomer(startIndex = i)
-		generateReservations(startIndex = i)
+		if i == 0:
+			generateAirline(startIndex = i)
+			generatePlane(startIndex = i)
+			generateFlight(startIndex = i)
+			generateCustomer(startIndex = i)
+			generateReservations(startIndex = i)
+			with open('sample_data.sql', 'a') as the_file:
+				the_file.write(exportTupsToSql(airline_tups,"Airline")+"\ncommit;\n")
+				the_file.write(exportTupsToSql(plane_tups,"Plane")+"\ncommit;\n")
+				the_file.write(exportTupsToSql(flight_tups,"Flight")+"\ncommit;\n")
+				the_file.write(exportTupsToSql(price,"Price")+"\ncommit;\n")
+				the_file.write(exportTupsToSql(customer_tups,"Customer")+"\ncommit;\n")
+				the_file.write(exportTupsToSql(reservation_tups,"Reservation")+"\ncommit;\n")
+				the_file.write(exportTupsToSql(reservation_details,"Reservation_detail")+"\ncommit;\n")
+		else:
+			generateAirline(startIndex = i, sql=False)
+			generatePlane(startIndex = i, sql=False)
+			generateFlight(startIndex = i, sql=False)
+			with open('airline_information-'+str(i)+'.csv', 'a') as the_file:
+				the_file.write(exportTupsToCSV(airline_tups))
 
-		# with open('sample_data.sql', 'a') as the_file:
-		#     the_file.write(exportTupsToSql(airline_tups,"Airline")+"\ncommit;\n")
-		#     the_file.write(exportTupsToSql(plane_tups,"Plane")+"\ncommit;\n")
-		#     the_file.write(exportTupsToSql(flight_tups,"Flight")+"\ncommit;\n")
-		#     the_file.write(exportTupsToSql(price,"Price")+"\ncommit;\n")
-		#     the_file.write(exportTupsToSql(customer_tups,"Customer")+"\ncommit;\n")
-		#     the_file.write(exportTupsToSql(reservation_tups,"Reservation")+"\ncommit;\n")
-		#     the_file.write(exportTupsToSql(reservation_details,"Reservation_detail")+"\ncommit;\n")
+			with open('schedule_information-'+str(i)+'.csv', 'a') as the_file:
+				the_file.write(exportTupsToCSV(flight_tups))
+
+			with open('pricing_information-'+str(i)+'.csv', 'a') as the_file:
+				the_file.write(exportTupsToCSV(price))
+
+			with open('plane_information-'+str(i)+'.csv', 'a') as the_file:
+				the_file.write(exportTupsToCSV(plane_tups))
 
 
-		with open('airline_information-'+str(i)+'.csv', 'a') as the_file:
-			the_file.write(exportTupsToCSV(airline_tups))
-
-		with open('schedule_information-'+str(i)+'.csv', 'a') as the_file:
-			the_file.write(exportTupsToCSV(flight_tups))
-
-		with open('pricing_information-'+str(i)+'.csv', 'a') as the_file:
-			the_file.write(exportTupsToCSV(price))
-
-		with open('plane_information-'+str(i)+'.csv', 'a') as the_file:
-			the_file.write(exportTupsToCSV(plane_tups))
-
-		with open('sample_data.sql', 'a') as the_file:
-			the_file.write(exportTupsToSql(customer_tups,"Customer")+"\ncommit;\n")
-			the_file.write(exportTupsToSql(reservation_tups,"Reservation")+"\ncommit;\n")
-			the_file.write(exportTupsToSql(reservation_details,"Reservation_detail")+"\ncommit;\n")
-
+		
 
 
 
