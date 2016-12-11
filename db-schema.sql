@@ -96,7 +96,7 @@ create table Reservation(
 		deferrable,
 	constraint reservation_cid_fk foreign key (cid) references Customer(cid)
 		deferrable,
-	constraint reservation_price_limit check (cost >= 0),
+	--constraint reservation_price_limit check (cost >= 0),
 	constraint reservation_ticketed_set check (ticketed in ('Y','N'))
 );
 
@@ -364,6 +364,9 @@ create or replace trigger adjustTicket
 		END LOOP;
 		close reservations_with_dest;
 	END IF;
+	EXCEPTION
+	WHEN NO_DATA_FOUND THEN
+		dbms_output.put_line('Data not found error in adjustTicket trigger');
 	END;
 	/
 				

@@ -64,10 +64,13 @@ public class AdministratorTasks
 	//read from file and insert into db
 	while(flightInfo.hasNext()){
 		Scanner currentTuple = null;
+		//String flightNumTemp = null;
 		try{
 			String currentToken;
 			currentTuple = new Scanner(flightInfo.nextLine()).useDelimiter("\\s*,\\s*");
 			
+			//flightNumTemp = currentTuple.next();
+			//insertStatement.setString(1, flightNumTemp);
 			insertStatement.setString(1, currentTuple.next());
 			insertStatement.setString(2, currentTuple.next());
 			insertStatement.setString(3, currentTuple.next());
@@ -85,6 +88,7 @@ public class AdministratorTasks
 			break;
 		}catch(SQLException sqle){
 			System.out.println("SQL Error: " + sqle.getMessage());
+			//System.out.println("Error occurred on record with flight number " + flightNumTemp);
 			retval = SQL_ERROR;
 			break;
 		}
@@ -298,12 +302,12 @@ public class AdministratorTasks
 					updateStatement.executeUpdate();
 				}catch(Exception e){
 					retval = SQL_ERROR;
-					System.out.println(e.getMessage());
+					System.out.println("SQL Error: " + e.getMessage());
 					break;
 				}
 			}else{
 				retval = SQL_ERROR;
-				System.out.println(sqle.getMessage());
+				System.out.println("SQL Error: " + sqle.getMessage());
 				break;
 			}
 		}

@@ -44,6 +44,7 @@ public class StressTestDriver
 			System.exit(-1);
 		}
 		
+		/*
 		//test Admin Task 2
 		System.out.println("Administrator Task 2: Load airline information");
 		query = "SELECT count(*) FROM Airline";
@@ -67,6 +68,7 @@ public class StressTestDriver
 		}catch(Exception e){
 			System.out.println("An unhandled exception occurred while inserting airline records: " + e.getMessage());
 		}
+		System.out.println();
 		
 		//test Admin Task 5 (we have to do these out of order since the other task's insertions depend on plane tuples
 		System.out.println("Administrator Task 5: Load plane information");
@@ -85,6 +87,7 @@ public class StressTestDriver
 		}catch(Exception e){
 			System.out.println("An unhandled exception occurred while inserting plane records: " + e.getMessage());
 		}
+		System.out.println();
 		
 		//test Admin task 3
 		System.out.println("Administrator Task 3: Load schedule information");
@@ -103,6 +106,7 @@ public class StressTestDriver
 		}catch(Exception e){
 			System.out.println("An unhandled exception occurred while inserting flight records: " + e.getMessage());
 		}
+		System.out.println();
 		
 		//test Admin task 4 part 1 (load from file)
 		System.out.println("Administrator Task 4: Load price information from file");
@@ -121,25 +125,30 @@ public class StressTestDriver
 		}catch(Exception e){
 			System.out.println("An unhandled exception occurred while inserting price records: " + e.getMessage());
 		}
+		System.out.println();
+		*/
 		
 		//test Admin task 4 part 2 (update prices)
 		System.out.println("Administrator Task 4: Update prices for existing records");
-		query = "SELECT * FROM Price";
+		query = "SELECT departure_city, arrival_city FROM Price";
 		try{
 			rs = statement.executeQuery(query);
+			Statement checkResultStatement = connection.createStatement();
 			for(int counter = 1; counter < 10 && rs.next(); counter++){
+				
 				String departureCity = rs.getString(1);
 				String arrivalCity = rs.getString(2);
 				System.out.println("Setting high price of flight from " + departureCity + " to " + arrivalCity + " to " + 500 + " and low price to " + 400);
 				AdministratorTasks.updatePricingInfo(500, 400, departureCity, arrivalCity, connection);
-				query = "SELECT high_price, low_price FROM Price WHERE departure_city = " + departureCity + " AND arrival_city = " + arrivalCity;
-				ResultSet priceRS = statement.executeQuery(query);
+				query = "SELECT high_price, low_price FROM Price WHERE departure_city = '" + departureCity + "' AND arrival_city = '" + arrivalCity + "'";
+				ResultSet priceRS = checkResultStatement.executeQuery(query);
 				priceRS.next();
 				System.out.println("The new high price of the flight from " + departureCity + " to " + arrivalCity + " is " + priceRS.getLong(1) + " and the new low price is " + priceRS.getLong(2));
 			}
 		}catch(Exception e){
 			System.out.println("An unhandled exception occurred while updating prices: " + e.getMessage());
 		}
+		System.out.println();
 		
 		//test administrator task 6 by creating the manifests for the first 10 flights people have reservations for in reservation_detail
 		System.out.println("Administrator Task 6: print flight manifest");
@@ -161,10 +170,11 @@ public class StressTestDriver
 		}catch(Exception e){
 			System.out.println("Unhandled exception while printing flight manifests " + e.getMessage());
 		}
+		System.out.println();
+		
 		
 
 		//CUSTOMER TASKS
-
 		CustomerTasks ct = new CustomerTasks(connection);
 		//Customer task 1: Add customers
 		String [] first_names = new String[10];
@@ -348,6 +358,7 @@ public class StressTestDriver
 		}catch(Exception e){
 			System.out.println("Unhandled exception while erasing the contents of the database " + e.getMessage());
 		}
+		
 	}
 	public static String randomNumber(int len){
 		StringBuilder sb = new StringBuilder( len );
@@ -361,5 +372,6 @@ public class StressTestDriver
 	      sb.append( AB.charAt( rnd.nextInt(AB.length()) ) );
 	   return sb.toString();
 	}	
+	
 }	
 
