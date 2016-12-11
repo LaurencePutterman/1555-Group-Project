@@ -44,7 +44,7 @@ public class StressTestDriver
 			System.exit(-1);
 		}
 		
-		/*
+		
 		//test Admin Task 2
 		System.out.println("Administrator Task 2: Load airline information");
 		query = "SELECT count(*) FROM Airline";
@@ -126,7 +126,7 @@ public class StressTestDriver
 			System.out.println("An unhandled exception occurred while inserting price records: " + e.getMessage());
 		}
 		System.out.println();
-		*/
+		
 		
 		//test Admin task 4 part 2 (update prices)
 		System.out.println("Administrator Task 4: Update prices for existing records");
@@ -176,6 +176,29 @@ public class StressTestDriver
 
 		//CUSTOMER TASKS
 		CustomerTasks ct = new CustomerTasks(connection);
+		//Customer task 8: add a reservation
+		System.out.println("Test customer task 8 by making some flight reservations (making all flights leg 100 since this value should not otherwise appear in the db.");
+		try{
+			Statement reservationStatement = connection.createStatement();
+			Statement flightStatement = connection.createStatement();
+			ResultSet reservationRS = reservationStatement.executeQuery("SELECT reservation_number FROM Reservation WHERE rownum < 11");
+			ResultSet flightRS = flightStatement.executeQuery("SELECT flight_number from Flight WHERE rownum < 11");
+			while(reservationRS.next() && flightRS.next()){
+				System.out.println("Inserting a leg 100 reservation for reservation " + reservationRS.getString(1) + " on flight " + flightRS.getString(1));
+				ct.makeReservation(reservationRS.getString(1), flightRS.getString(1), "11/11/2011", 100);
+			}
+			System.out.println("The database now contains these leg 100 reservations: ");
+			query = "SELECT * FROM reservation_detail WHERE leg = 100";
+			rs = statement.executeQuery(query);
+			while(rs.next()){
+				System.out.println("Reservation num: " + rs.getString(1) + " Flight num: " + rs.getString(2));
+			}
+			query = "DELETE FROM reservation_detail WHERE leg = 100";
+			statement.execute(query);
+		}catch(Exception e){
+			System.out.println("Unhandled exception when adding reservations " + e.getMessage());
+		}
+		
 		//Customer task 1: Add customers
 		String [] first_names = new String[10];
 		String [] last_names = new String[10];

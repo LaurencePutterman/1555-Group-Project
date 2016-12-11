@@ -99,7 +99,7 @@ public class CustomerTasks
 	    		findAllRoutesWithSeatsBtwTwoCitiesOnDayForAirlineHelper();
 	    		break;
     		case '8':
-	    		makeReservation();
+	    		makeReservationHelper();
 	    		break;
     		case '9':
 	    		showReservationInfoGivenNumberHelper();
@@ -1143,7 +1143,15 @@ public boolean buyTicketOnReservation(String reservation_number)
 		return false;
 	}
 }
-private void makeReservation()
+
+public void makeReservation(String reservationNum, String flightNum, String date, int leg) throws SQLException
+{
+	Statement statement = connection.createStatement();
+	String query = "INSERT INTO Reservation_detail VALUES ('" + reservationNum + "', '" + flightNum + "', to_date('" + date + "', 'MM/DD/YYYY'), " + leg + ")";
+	statement.execute(query);
+}
+
+private void makeReservationHelper()
 {
 	String startingAirport;
 	String cid;
